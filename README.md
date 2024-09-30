@@ -131,6 +131,8 @@ git clone https://github.com/SatwikReddySripathi/Multiclass_Disease_Classificati
 ## Application Interface
 ## Monitoring Dashboard
 ## Contributors
-(https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification/graphs/contributors)
+[![MLOPs contributors](https://contrib.rocks/image?repo=raminmohammadi/MLOps)](https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification/graphs/contributors)
+
+
 @DhanushAkula @DhananJayKumarMV @
 ## Acknowledgments

@@ -2,7 +2,7 @@
 This project is designed to develop, deploy, and maintain a machine learning model for multiclass disease classification of chest X-rays. It utilizes a Machine Learning Operations (MLOps) framework to ensure seamless development, deployment, and continuous monitoring of the model. The project follows best practices for reproducibility, modularity, and scalability.
 
 ## Table of Contents
-1. [Introduction] (#introduction)
+1. [Introduction](#introduction)
 2. Dataset Information
 3. Project Workflow
 4. Prerequisites

@@ -133,6 +133,11 @@ git clone https://github.com/SatwikReddySripathi/Multiclass_Disease_Classificati
 ## Contributors
 [![MLOPs contributors](https://contrib.rocks/image?repo=SatwikReddySripathi/Multiclass_Disease_Classification)](https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification/graphs/contributors)
 
+* [@SatwikReddySripathi](https://github.com/SatwikReddySripathi)
+* [@DhanushAkula](https://github.com/DhanushAkula)
+* [@DhananJayKumarMV](https://github.com/DhananJayKumarMV)
+* [@SravyaKodati](https://github.com/SravyaKodati)
+* [@vamsijilla](https://github.com/vamsijilla)
+* [@malkarsaidheeraj](https://github.com/malkarsaidheeraj)
 
-@DhanushAkula @DhananJayKumarMV @
 ## Acknowledgments

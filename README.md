@@ -124,7 +124,7 @@ git clone https://github.com/SatwikReddySripathi/Multiclass_Disease_Classificati
 
 
 ```
-**Folders Structure**
+
 
 ## Data Storage and Model Registry
 ## Pipeline

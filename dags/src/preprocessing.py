@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+
+"""from google.colab import drive
+drive.mount('/content/drive')"""
+
 import os
 import cv2
 import json

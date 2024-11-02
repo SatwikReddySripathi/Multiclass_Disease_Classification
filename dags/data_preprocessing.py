@@ -12,7 +12,7 @@ import sys
 # sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.append('/opt/airflow/src')
 
-from scripts.preprocessing import process_images
+from src.preprocessing import process_images
 # from airflow.operators.email import EmailOperator
 # from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 # from airflow.utils.trigger_rule import TriggerRule

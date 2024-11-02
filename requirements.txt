@@ -1,0 +1,10 @@
+apache-airflow
+dvc[gs]
+flask
+scikit-learn
+scipy
+pandas
+numpy
+opencv-python
+tqdm
+Pillow

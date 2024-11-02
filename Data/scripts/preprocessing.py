@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from collections import Counter
+import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 def load_label_indices(json_path):
@@ -60,18 +61,23 @@ def augment_generator():
   )
   return augmentation_generator
 
-def get_augmented_indices(df, total_images):
+def get_augmented_indices(class_data, df, total_images, target_percentage= 0.03, undersampled_percent= 0.05, random_percent= 0.05):
     """
     Identify indices for 5% of undersampled class images (hernia) and 5% random other images.
     """
-    labels = df['Labels'].tolist()
-    class_counts = Counter(labels)
-    undersampled_classes = {cls: count for cls, count in class_counts.items() if count < 0.05 * total_images}
+
+    class_counts= {}
+    for item in class_data.items():
+      class_counts[item[0]]= len(item[1])
+
+    print("class_counts: ", class_counts)
+    
+    undersampled_classes = {cls: count for cls, count in class_counts.items() if count < target_percentage * total_images} #61758078366 lathe
 
     undersampled_indices = df[df['Labels'].isin(undersampled_classes.keys())].index.tolist()
-    random_indices = df[~df['Labels'].isin(undersampled_classes.keys())].sample(frac=0.05, random_state=42).index.tolist()
+    random_indices = df[~df['Labels'].isin(undersampled_classes.keys())].sample(frac=random_percent, random_state=42).index.tolist()
 
-    return set(undersampled_indices[:int(0.05 * total_images)] + random_indices)
+    return set(undersampled_indices[:int(undersampled_percent * total_images)] + random_indices)
 
 def apply_augmentation(image, augmentation_generator):
     """
@@ -107,15 +113,17 @@ def process_images(original_data_folder, preprocessed_data_folder, csv_path, lab
         save_image(image, save_path, image_id)
 
     if is_training:
+      label_to_indices = load_label_indices(label_json_path)
+      augmented_indices = get_augmented_indices(label_to_indices, df, len(df))
 
-      augmented_indices = get_augmented_indices(df, len(df))
       for idx in tqdm(augmented_indices, desc="Augmenting images"):
           row = df.iloc[idx]
           image_id = row['Image Index']
           label = row['Labels']
-          #image_path = os.path.join(preprocessed_data_folder, label, image_id)
 
+          #image_path = os.path.join(preprocessed_data_folder, label, image_id)
           #image = preprocess_image(image_path) --> don't do this lol, aug doesn't work due to some normalization/scaling issues.
+
           raw_image= cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
           augmented_images= apply_augmentation(raw_image, augmentation_generator)
 

@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from collections import Counter
+import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 def load_label_indices(json_path):
@@ -125,12 +126,9 @@ def process_images(original_data_folder, preprocessed_data_folder, csv_path, lab
 
     print("Data preprocessing and augmentation complete.")
 
-"""
-original_data_folder = '/content/drive/My Drive/MLOPs Project/sampled_data'
+"""original_data_folder = '/content/drive/My Drive/MLOPs Project/sampled_data'
 preprocessed_data_folder = '/content/drive/My Drive/MLOPs Project/preprocessed_data'
 csv_path = '/content/drive/My Drive/MLOPs Project/sampled_train_data_entry.csv'
 label_json_path = '/content/drive/My Drive/MLOPs Project/label_indices.json'
 
-process_images(original_data_folder, preprocessed_data_folder, csv_path, label_json_path)
-
-"""
+process_images(original_data_folder, preprocessed_data_folder, csv_path, label_json_path)"""

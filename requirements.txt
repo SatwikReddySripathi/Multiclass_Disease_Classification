@@ -5,6 +5,8 @@ scikit-learn
 scipy
 pandas
 numpy
-opencv-python
+opencv-python-headless
 tqdm
 Pillow
+tensorflow
+google-cloud-storage

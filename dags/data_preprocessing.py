@@ -45,7 +45,7 @@ default_args = {
 dag = DAG(
     DAG_NAME,
     default_args=default_args,
-    description='Data preprocessing Steps of Images',
+    description='MLOps Data pipeline',
     schedule_interval=None,  # Set the schedule interval or use None for manual triggering
     catchup=False,
     tags=['Group10']

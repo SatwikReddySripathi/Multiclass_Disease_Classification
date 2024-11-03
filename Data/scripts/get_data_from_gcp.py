@@ -151,7 +151,7 @@ def download_and_compress_images(md5_image_data, output_pickle_file):
 
 # Load the JSON data containing MD5 and image index info
 # Assuming this is your JSON data loaded from the previous step
-output_pickle_file = "compressed_images.pkl"
+output_pickle_file = OUTPUT_DIR
 
 download_and_compress_images(final_json, output_pickle_file)
 

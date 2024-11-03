@@ -39,7 +39,7 @@ def find_md5_hashes(project_dir):
 
 # Set the project directory (replace this with your actual project directory path)
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
-OUTPUT_DIR = os.path.join(PROJECT_DIR, 'data','processed', 'raw_compressed_data.pkl')
+OUTPUT_DIR = os.path.join(PROJECT_DIR, 'Processed_Data', 'raw_compressed_data.pkl')
 
 # Run the function to get MD5 hashes
 md5_hashes = find_md5_hashes(PROJECT_DIR)

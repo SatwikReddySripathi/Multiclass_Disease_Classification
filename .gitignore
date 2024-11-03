@@ -6,6 +6,8 @@ __pycache__/
 *.so
 # Distribution / packaging
 .Python
+.DS_Store
+.gitignore.save
 build/
 develop-eggs/
 dist/

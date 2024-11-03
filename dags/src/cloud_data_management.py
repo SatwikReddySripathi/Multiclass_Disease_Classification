@@ -4,11 +4,19 @@ import io
 import matplotlib.pyplot as plt
 import os
 from google.cloud import storage
-
+import logging
+from airflow.utils.log.logging_mixin import LoggingMixin
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "config/black-resource-440218-c3-5c0b7f31ce1f.json"
+# sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
+
+airflow_logger = LoggingMixin().log
+
+# PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
+KEY_PATH = os.path.join(PROJECT_DIR, "config", "black-resource-440218-c3-5c0b7f31ce1f.json")
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = KEY_PATH
 
 def view_blob_content(bucket_name,blob_name):
     storage_client = storage.Client(project = 'black-resource-440218-c3')

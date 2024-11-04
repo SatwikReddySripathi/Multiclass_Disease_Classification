@@ -116,6 +116,7 @@ def download_and_compress_images(md5_image_data, output_pickle_file):
     for item in md5_image_data:
         md5 = item["md5"]
         image_index = item["image_index"]
+        image_label = item["image_label"]
 
         # Attempt to download the image from GCP bucket
         blob = bucket.blob(f'files/md5/{md5[:2]}/{md5[2:]}')
@@ -138,7 +139,7 @@ def download_and_compress_images(md5_image_data, output_pickle_file):
             compressed_image.seek(0)  # Rewind the buffer
             
             # Store compressed image in dictionary
-            compressed_images[image_index] = compressed_image.getvalue()
+            compressed_images[image_index] = {'image_data': compressed_image.getvalue(), 'image_label': image_label}
             print(f"Compressed and stored image: {image_index}")
 
         except Exception as e:

@@ -9,17 +9,24 @@ from tqdm import tqdm
 from collections import Counter
 import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from airflow.utils.log.logging_mixin import LoggingMixin
 
-
-log_directory = '/content/drive/My Drive/MLOPs Project'  
-log_filename = 'logs.log'
-log_file_path = os.path.join(log_directory, log_filename)
+# Set up Airflow logger
+airflow_logger = LoggingMixin().log
+# Set the project directory
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
+LOG_DIR = os.path.join(PROJECT_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(LOG_DIR, 'data_preprocessing.log')
+# log_directory = '/content/drive/My Drive/MLOPs Project'  
+# log_filename = 'logs.log'
+# log_file_path = os.path.join(log_directory, log_filename)
 
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
 
-file_handler = logging.FileHandler(log_file_path)
+file_handler = logging.FileHandler(LOG_FILE_PATH)
 file_handler.setLevel(logging.DEBUG)
 
 console_handler = logging.StreamHandler()
@@ -32,7 +39,7 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-logger.info("Logging configuration is set. Logs will be saved to: {}".format(log_file_path))
+logger.info("Logging configuration is set. Logs will be saved to: {}".format(LOG_FILE_PATH))
 
 
 def load_label_indices(json_path):

@@ -11,16 +11,12 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from airflow.utils.log.logging_mixin import LoggingMixin
 
-# Set up Airflow logger
-airflow_logger = LoggingMixin().log
-# Set the project directory
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
-LOG_DIR = os.path.join(PROJECT_DIR, "logs")
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE_PATH = os.path.join(LOG_DIR, 'data_preprocessing.log')
-# log_directory = '/content/drive/My Drive/MLOPs Project'  
-# log_filename = 'logs.log'
-# log_file_path = os.path.join(log_directory, log_filename)
+
+# Updated log directory to fit the Airflow container's structure
+log_directory = '/opt/airflow/logs'
+log_filename = 'data_preprocessing.log'
+log_file_path = os.path.join(log_directory, log_filename)
+
 
 
 logger = logging.getLogger()

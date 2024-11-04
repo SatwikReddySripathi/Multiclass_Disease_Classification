@@ -9,8 +9,6 @@ from tqdm import tqdm
 from collections import Counter
 import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from airflow.utils.log.logging_mixin import LoggingMixin
-
 
 # Updated log directory to fit the Airflow container's structure
 log_directory = '/opt/airflow/logs'
@@ -18,11 +16,10 @@ log_filename = 'data_preprocessing.log'
 log_file_path = os.path.join(log_directory, log_filename)
 
 
-
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
 
-file_handler = logging.FileHandler(LOG_FILE_PATH)
+file_handler = logging.FileHandler(log_file_path)
 file_handler.setLevel(logging.DEBUG)
 
 console_handler = logging.StreamHandler()
@@ -35,7 +32,7 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-logger.info("Logging configuration is set. Logs will be saved to: {}".format(LOG_FILE_PATH))
+logger.info("Logging configuration is set. Logs will be saved to: {}".format(log_file_path))
 
 
 def load_label_indices(json_path):

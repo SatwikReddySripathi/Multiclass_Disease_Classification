@@ -10,3 +10,4 @@ tqdm
 Pillow
 tensorflow
 google-cloud-storage
+pyyaml

@@ -12,6 +12,7 @@ import sys
 sys.path.append('/opt/airflow/src')
 
 from src.preprocessing import process_images
+from src.cloud_data_management import extracting_data_from_gcp
 # from airflow.operators.email import EmailOperator
 # from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 # from airflow.utils.trigger_rule import TriggerRule
@@ -26,12 +27,13 @@ os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE_PATH = os.path.join(LOG_DIR, 'airflow.log')
 
 DAG_NAME = 'Data_Preprocessing_Steps'
+bucket_name = 'nih-dataset-mlops'
 
 
-original_data_folder = '/content/drive/My Drive/MLOPs Project/sampled_data'
-preprocessed_data_folder = '/content/drive/My Drive/MLOPs Project/preprocessed_data'
-csv_path = '/content/drive/My Drive/MLOPs Project/sampled_train_data_entry.csv'
-label_json_path = '/content/drive/My Drive/MLOPs Project/label_indices.json'
+# original_data_folder = '/content/drive/My Drive/MLOPs Project/sampled_data'
+# preprocessed_data_folder = '/content/drive/My Drive/MLOPs Project/preprocessed_data'
+# csv_path = '/content/drive/My Drive/MLOPs Project/sampled_train_data_entry.csv'
+# label_json_path = '/content/drive/My Drive/MLOPs Project/label_indices.json'
 
 default_args = {
     'owner': 'MLOPs_Team10',
@@ -61,16 +63,26 @@ end_task = DummyOperator(
     dag=dag
 )
 
-process_images_task = PythonOperator(
-    task_id='Process_Images',
-    python_callable=process_images,
+extracting_data = PythonOperator(
+    task_id='Data_Extraction',
+    python_callable=extracting_data_from_gcp,
     op_kwargs={
-        'original_data_folder': original_data_folder,
-        'preprocessed_data_folder': preprocessed_data_folder,
-        'csv_path': csv_path,
-        'label_json_path': label_json_path
+        'bucket_name': bucket_name
     },
     dag=dag
 )
 
-start_task >> process_images_task >> end_task
+
+# process_images_task = PythonOperator(
+#     task_id='Process_Images',
+#     python_callable=process_images,
+#     op_kwargs={
+#         'original_data_folder': original_data_folder,
+#         'preprocessed_data_folder': preprocessed_data_folder,
+#         'csv_path': csv_path,
+#         'label_json_path': label_json_path
+#     },
+#     dag=dag
+# )
+
+start_task >> extracting_data >> end_task

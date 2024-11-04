@@ -23,7 +23,9 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.5.1}
+  #image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.5.1}
+  build: .
+
   # build: .
   environment:
     &airflow-common-env
@@ -37,7 +39,7 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-matplotlib scikit-learn seaborn imblearn opencv-python-headless tqdm Pillow kneed tensorflow}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     # - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/Data
@@ -85,20 +87,33 @@ services:
     command: webserver
     ports:
       - 8080:8080
+    volumes:
+      - ./logs:/opt/airflow/logs
+      - ./dags:/opt/airflow/dags
+      - ./dags/src:/opt/airflow/dags/src
+
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 10s
+      interval: 30s
+      timeout: 20s
       retries: 5
+      start_period: 60s
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
 
+
+
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
+    volumes:
+      - ./logs:/opt/airflow/logs
+      - ./dags:/opt/airflow/dags
+      - ./dags/src:/opt/airflow/dags/src
+
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
       interval: 10s
@@ -110,9 +125,15 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+
   airflow-worker:
     <<: *airflow-common
     command: celery worker
+    volumes:
+      - ./logs:/opt/airflow/logs
+      - ./dags:/opt/airflow/dags
+      - ./dags/src:/opt/airflow/dags/src
+
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -129,7 +150,7 @@ services:
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
-        condition: service_completed_successfully
+        condition: service_completed_successfully     
 
   airflow-triggerer:
     <<: *airflow-common

@@ -18,7 +18,7 @@ class AnomalyDetector:
             'missing_labels_ratio': 0.05,
             'corrupt_images_ratio': 0.02,
             'min_image_size': 100 * 100,  # minimum 100x100 pixels
-            'max_image_size': 1000 * 1000,  # maximum 1000x1000 pixels
+            'max_image_size': 5000 * 5000,  # maximum 1000x1000 pixels
             'class_imbalance_ratio': 0.1  # minimum 10% for any class
         }
         

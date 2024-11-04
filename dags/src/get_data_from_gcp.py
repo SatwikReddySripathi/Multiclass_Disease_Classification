@@ -14,7 +14,8 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 # Set up Airflow logger
 airflow_logger = LoggingMixin().log
 # Set the project directory
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
+PROJECT_DIR = '/opt/airflow'
+# PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOG_DIR = os.path.join(PROJECT_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE_PATH = os.path.join(LOG_DIR, 'data_extraction.log')
@@ -81,7 +82,7 @@ def find_md5_hashes(project_dir):
 
     return md5_keys
 
-# # Set the project directory (replace this with your actual project directory path)
+# # Set the project directory
 # PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
 # OUTPUT_DIR = os.path.join(PROJECT_DIR, 'Processed_Data', 'raw_compressed_data.pkl')
 

@@ -191,7 +191,7 @@ def download_and_compress_images(bucket, md5_image_data, output_pickle_file):
             compressed_image.seek(0)  # Rewind the buffer
             
             # Store compressed image in dictionary
-            compressed_images[image_index] = compressed_image.getvalue()
+            compressed_images[image_index] = {'image_data': compressed_image.getvalue(), 'image_label': image_label}
             print(f"Compressed and stored image: {image_index}")
             custom_log(f"Compressed and stored image: {image_index}")
 

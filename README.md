@@ -61,20 +61,25 @@ This is the basic Project Flow and this will be updated after the final system a
 ├── data
 │   ├── raw_notebooks              # Directory containing preprocessed training data
 │   │   ├── Pre-processing.ipynb   #A Visual example of how the pre-processing steps are executed for a sample data
+│   ├── tests
+│   │   ├── test_get_data_from_gcp.py #unittest file for getting data from gcp
+│   │   ├── test_schema_generation.py #unittest file for generation of schema for the data
+│   │   ├── test_anomaly_detection.py #unittest file for detection of anomalies
+│   │   ├── test_preprocessing.py #unittest file for testing out the pre-processing steps and augmentation steps
 ├── assets
-│   ├── images 
+│   ├── images  #contains images required for the project
 ├── config
 │   ├── _init_.py
 ├── Dags
 │   ├── Src
 │   │   ├── Data  # Kubernetes deployment configuration for the frontend
-│   │   |    ├── sampled_data.dvc
-│   │   |    ├── sampled_data_entry.csv.dvc
-│   │   ├── get_data_from_gcp.py
-│   │   ├── cloud_data_management.py
-│   │   ├── schema_generation.py
-│   │   ├── anomaly_detection.py
-│   │   ├── preprocessing.py
+│   │   |    ├── sampled_data.dvc # resulted.dvc file when folder of sampled_data with image data set is pushed to gcp using DVC
+│   │   |    ├── sampled_data_entry.csv.dvc # resulted .dvc file when csv file containg labels and image index is pushed to gcp using DVC
+│   │   ├── get_data_from_gcp.py # this file is to execute to get the data from the remote gcp, which is pushed to gcp using DVC
+│   │   ├── cloud_data_management.py # this is the file which integrates all the scripts to assist in airflow execution
+│   │   ├── schema_generation.py # this file generates the statistics and schema for the data
+│   │   ├── anomaly_detection.py # this file uses the schema and other metrics to detect the anomalies
+│   │   ├── preprocessing.py # this file executes augmentation to overcome class imbalance and then perform pre-processing steps
 ├── logs/scheduler
 │   ├── model.py              # Defines the model architecture for training
 │   ├── train.py              # Script for training the machine learning model
@@ -87,8 +92,8 @@ This is the basic Project Flow and this will be updated after the final system a
 ├── README.md                  # read me file
 ├── docker-compose.yaml        # Docker Compose file to set up and run multi-container Docker applications
 ├── requirements.txt           # Python dependencies required for running the project locally
-├── sampled_data.dvc
-├── sampled_data_entry.csv.dvc
+├── sampled_data.dvc           # resulted.dvc file when folder of sampled_data with image data set is pushed to gcp using DVC
+├── sampled_data_entry.csv.dvc # resulted .dvc file when csv file containg labels and image index is pushed to gcp using DVC
 
 
 

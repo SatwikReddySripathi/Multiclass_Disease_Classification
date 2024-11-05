@@ -234,5 +234,5 @@ def anomalies_detect():
 
     
 
-if __name__ == "__main__":
-    anomalies_detect()
+# if __name__ == "__main__":
+#     anomalies_detect()

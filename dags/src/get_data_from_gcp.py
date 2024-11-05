@@ -82,16 +82,6 @@ def find_md5_hashes(project_dir):
 
     return md5_keys
 
-# # Set the project directory
-# PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
-# OUTPUT_DIR = os.path.join(PROJECT_DIR, 'Processed_Data', 'raw_compressed_data.pkl')
-
-# # Run the function to get MD5 hashes
-# md5_hashes = find_md5_hashes(PROJECT_DIR)
-
-# # Print all extracted MD5 hashes
-# print("Extracted MD5 hashes:", md5_hashes)
-
 
 def get_file_contents_as_dict(bucket, md5_keys):
     json_content_dict = {}
@@ -146,20 +136,6 @@ def create_final_json(json_content_dict, csv_content_dict):
                 
     return final_data
 
-# # Run the function and store the content in variables
-# KEY_PATH = os.path.join(PROJECT_DIR, "config", "black-resource-440218-c3-5c0b7f31ce1f.json")
-# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = KEY_PATH
-# storage_client = storage.Client(project = 'black-resource-440218-c3')
-# bucket_name = 'nih-dataset-mlops'
-# bucket = storage_client.get_bucket(bucket_name)
-# json_content_dict, csv_content_dict = get_file_contents_as_dict(bucket, md5_hashes)
-# final_json = create_final_json(json_content_dict, csv_content_dict)
-
-
-# # Display the final JSON structure
-# print("Final JSON structure:")
-# print(json.dumps(final_json, indent=2))
-
 
 def download_and_compress_images(bucket, md5_image_data, output_pickle_file):
     compressed_images = {}
@@ -179,11 +155,11 @@ def download_and_compress_images(bucket, md5_image_data, output_pickle_file):
             # Open image using PIL
             image = Image.open(io.BytesIO(image_bytes))
 
-            # Convert RGBA to RGB if necessary
-            if image.mode == 'RGBA':
-                image = image.convert('RGB')
-                print(f"Converted {image_index} from RGBA to RGB for JPEG compatibility.")
-                custom_log(f"Converted {image_index} from RGBA to RGB for JPEG compatibility.")
+            # Converting RGBA to RGB if necessary
+            if image.mode in ['RGB','RGBA']:
+                image = image.convert('L')
+                print(f"Converted {image_index}  to L for JPEG compatibility.")
+                custom_log(f"Converted {image_index}  to L for JPEG compatibility.")
             
             # Compress the image
             compressed_image = io.BytesIO()
@@ -204,11 +180,5 @@ def download_and_compress_images(bucket, md5_image_data, output_pickle_file):
         pickle.dump(compressed_images, f)
         print(f"All compressed images saved to {output_pickle_file}")
         custom_log(f"All compressed images saved to {output_pickle_file}")
-
-# # Load the JSON data containing MD5 and image index info
-# # Assuming this is your JSON data loaded from the previous step
-# output_pickle_file = OUTPUT_DIR
-
-# download_and_compress_images(final_json, output_pickle_file)
 
 

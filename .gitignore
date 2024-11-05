@@ -134,3 +134,5 @@ cython_debug/
 /sampled_data
 /sampled_data_entry.csv
 config/black-resource-440218-c3-5c0b7f31ce1f.json
+Processed_Data/raw_compressed_data_old.pkl
+Processed_Data/raw_compressed_data.pkl

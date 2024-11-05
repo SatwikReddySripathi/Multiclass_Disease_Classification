@@ -17,7 +17,7 @@ airflow_logger = LoggingMixin().log
 PROJECT_DIR = '/opt/airflow'
 # PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
+# PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
 INPUT_PICKLE_PATH = os.path.join(PROJECT_DIR, 'Processed_Data', 'raw_compressed_data.pkl')
 SCHEMA_PATH = os.path.join(PROJECT_DIR, 'Processed_Data', "schema.pbtxt")
 LOG_DIR = os.path.join(PROJECT_DIR, "logs")

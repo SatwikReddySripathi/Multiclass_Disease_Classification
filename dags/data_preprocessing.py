@@ -7,6 +7,15 @@ from airflow import configuration as conf
 import os
 import sys
 import logging
+# Adjust this path to match the absolute or relative path to the parent directory containing `Data`
+# sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
+# sys.path.append('/opt/airflow/src')
+
+from src.preprocessing import process_images
+from src.cloud_data_management import extracting_data_from_gcp
+# from airflow.operators.email import EmailOperator
+# from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+# from airflow.utils.trigger_rule import TriggerRule
 
 # Set the logging directory to a known directory inside the Airflow container
 LOG_DIR = '/opt/airflow/logs'
@@ -18,6 +27,8 @@ os.makedirs(LOG_DIR, exist_ok=True)
 # Configure logging to write to the specified file
 logging.basicConfig(filename=LOG_FILE_PATH, level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+bucket_name = 'nih-dataset-mlops'
 
 # Add the source directory to the path for imports
 sys.path.append('/opt/airflow/dags/src')
@@ -44,6 +55,14 @@ with DAG(DAG_NAME, default_args=default_args, schedule_interval=None, catchup=Fa
         task_id='process_images',
         python_callable=process_images,
     )
+
+    extracting_data = PythonOperator(
+    task_id='Data_Extraction',
+    python_callable=extracting_data_from_gcp,
+    op_kwargs={
+        'bucket_name': bucket_name
+    }
+)
 
     end = DummyOperator(task_id='end')
 

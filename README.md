@@ -49,7 +49,7 @@ The project utilizes the NIH ChestX-ray14 dataset, one of the largest publicly a
 14. Hernia
 
 ## Project Workflow
-![Basic Project Workflow](assets/project_flow.png)
+![Basic Project Workflow](assets/HighLevel_arch.png)
 This is the basic Project Flow and this will be updated after the final system architecture is designed
 
 ## Prerequisites 

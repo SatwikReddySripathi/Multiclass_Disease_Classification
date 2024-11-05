@@ -11,3 +11,7 @@ Pillow
 tensorflow
 google-cloud-storage
 pyyaml
+matplotlib
+seaborn
+imblearn
+kneed

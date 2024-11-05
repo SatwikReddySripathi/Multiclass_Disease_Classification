@@ -8,12 +8,52 @@ import numpy as np
 import io
 from collections import Counter
 import ast
+import logging
+from airflow.utils.log.logging_mixin import LoggingMixin
 
-
+# Set up Airflow logger
+airflow_logger = LoggingMixin().log
+# Set the project directory
+PROJECT_DIR = '/opt/airflow'
+# PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
 INPUT_PICKLE_PATH = os.path.join(PROJECT_DIR, 'Processed_Data', 'raw_compressed_data.pkl')
 SCHEMA_PATH = os.path.join(PROJECT_DIR, 'Processed_Data', "schema.pbtxt")
+LOG_DIR = os.path.join(PROJECT_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(LOG_DIR, 'anomaly_detection.log')
+
+logger = logging.getLogger('file_logger')
+logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages
+
+file_handler = logging.FileHandler(LOG_FILE_PATH)
+file_handler.setLevel(logging.DEBUG)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+logger.info("Logging configuration is set. Logs will be saved to: {}".format(LOG_FILE_PATH))
+
+def custom_log(message, level=logging.INFO):
+    """Log to both Airflow and custom file logger"""
+    if level == logging.INFO:
+        airflow_logger.info(message)
+        logger.info(message)
+    elif level == logging.ERROR:
+        airflow_logger.error(message)
+        logger.error(message)
+    elif level == logging.WARNING:
+        airflow_logger.warning(message)
+        logger.warning(message)
+
 
 def load_dataframe(file_path):
     """Load data from a pickle file."""
@@ -21,9 +61,11 @@ def load_dataframe(file_path):
         with open(file_path, 'rb') as f:
             data = pickle.load(f)
             print(f"Loaded data from pickle file with {len(data)} records.")
+            custom_log(f"Loaded data from pickle file with {len(data)} records.")
             return pd.DataFrame.from_dict(data, orient='index')
     except Exception as e:
         print("Error:", e)
+        custom_log(f"Error: {e}",level=logging.ERROR)
         raise
 
 def load_schema(schema_path):
@@ -31,9 +73,12 @@ def load_schema(schema_path):
     try:
         schema = schema_util.load_schema_text(schema_path)
         print(f"Schema loaded from {schema_path}")
+        custom_log(f"Schema loaded from {schema_path}")
         return schema
+    
     except Exception as e:
         print(f"Failed to load schema: {e}")
+        custom_log(f"Failed to load schema: {e}",level=logging.ERROR)
         raise
 
 def prepare_data_splits(df):
@@ -47,6 +92,7 @@ def prepare_data_splits(df):
     serving_df = df.iloc[train_len + eval_len:].drop(columns='image_label').reset_index(drop=True)
 
     print(f"Prepared data splits: train shape {train_df.shape}, eval shape {eval_df.shape}, serving shape {serving_df.shape}")
+    custom_log(f"Prepared data splits: train shape {train_df.shape}, eval shape {eval_df.shape}, serving shape {serving_df.shape}")
     return train_df, eval_df, serving_df
 
 def generate_statistics(train_df, eval_df, serving_df, schema):
@@ -58,6 +104,7 @@ def generate_statistics(train_df, eval_df, serving_df, schema):
     )
 
     print("Generated statistics for training and evaluation data.")
+    custom_log("Generated statistics for training and evaluation data.")
     return train_stats, eval_stats, serving_stats
 
 def detect_anomalies(statistics, schema):
@@ -83,6 +130,7 @@ def check_image_data(df):
     incompatible_indices = df.index[~df['image_data'].apply(is_grayscale)].tolist()
 
     if incompatible_indices:
+        custom_log(f"Incompatible images found at indices: {incompatible_indices}",level=logging.ERROR)
         raise ValueError(f"Incompatible images found at indices: {incompatible_indices}")
     
     print("All images are in grayscale (JPEG-compatible) format.")
@@ -108,10 +156,13 @@ def check_missing_or_invalid_labels(df):
 
     if missing_labels > 0:
         print(f"Found {missing_labels} missing labels.")
+        custom_log(f"Found {missing_labels} missing labels.")
     if invalid_labels:
         print(f"Invalid labels found at indices: {invalid_labels}")
+        custom_log(f"Invalid labels found at indices: {invalid_labels}")
     else:
         print("All labels are valid and correctly formatted as integers or lists of integers.")
+        custom_log("All labels are valid and correctly formatted as integers or lists of integers.")
 
 
 
@@ -120,6 +171,7 @@ def check_class_distribution(df):
     class_counts = pd.Series([label for labels in df['image_label'] for label in labels]).value_counts()
     if class_counts.min() < 0.1 * class_counts.sum():
         print("Warning: Potential class imbalance detected.")
+        custom_log("Warning: Potential class imbalance detected.",level = logging.WARNING)
 
 def check_image_dimensions(df):
     """Check the dimensions of images and alert for high variation."""
@@ -139,17 +191,23 @@ def check_image_dimensions(df):
         print(f"Most common dimension: {most_common_dim} with {most_common_count} images")
         print(f"Unique dimensions count: {unique_dims}")
         print(f"Width variation: {width_variation}, Height variation: {height_variation}")
+        custom_log(f"Most common dimension: {most_common_dim} with {most_common_count} images")
+        custom_log(f"Unique dimensions count: {unique_dims}")
+        custom_log(f"Width variation: {width_variation}, Height variation: {height_variation}")
         
         # Alert if there is high variation
         if width_variation > 50 or height_variation > 50:  # Adjust thresholds as needed
             print("Alert: There is a high variation in image dimensions.")
+            custom_log("Alert: There is a high variation in image dimensions.")
     else:
         print("All images have the same dimension:",most_common_dim)
+        custom_log(f"All images have the same dimension: {most_common_dim}")
 
 
 def anomalies_detect():
     """Main function to execute the next data processing task."""
     print("Starting next data processing task...")
+    custom_log("Starting next data processing task...")
 
     # Load data and schema
     df = load_dataframe(INPUT_PICKLE_PATH)
@@ -168,8 +226,10 @@ def anomalies_detect():
     check_class_distribution(df)
     
     print("Anomalies in Evaluation:")
+    custom_log("Anomalies in Evaluation:")
     detect_anomalies(eval_stats, schema)
     print("Anomalies in serving set:")
+    custom_log("Anomalies in serving set:")
     detect_anomalies(serving_stats, schema)
 
     

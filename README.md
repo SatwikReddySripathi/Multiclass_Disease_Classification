@@ -52,6 +52,47 @@ The project utilizes the NIH ChestX-ray14 dataset, one of the largest publicly a
 ![Basic Project Workflow](assets/HighLevel_arch.png)
 This is the basic Project Flow and this will be updated after the final system architecture is designed
 
+## Git Repo and Project Structure
+**Project Structure**
+```
+├── .dvc
+│   ├── config                # Configuration file for DVC (Data Version Control)
+│   ├── .gitignore            # Specifies files/folders related to DVC to be ignored by Git
+├── data
+│   ├── raw_notebooks              # Directory containing preprocessed training data
+│   │   ├── Pre-processing.ipynb   #A Visual example of how the pre-processing steps are executed for a sample data
+├── assets
+│   ├── images 
+├── config
+│   ├── _init_.py
+├── Dags
+│   ├── Src
+│   │   ├── Data  # Kubernetes deployment configuration for the frontend
+│   │   |    ├── sampled_data.dvc
+│   │   |    ├── sampled_data_entry.csv.dvc
+│   │   ├── get_data_from_gcp.py
+│   │   ├── cloud_data_management.py
+│   │   ├── schema_generation.py
+│   │   ├── anomaly_detection.py
+│   │   ├── preprocessing.py
+├── logs/scheduler
+│   ├── model.py              # Defines the model architecture for training
+│   ├── train.py              # Script for training the machine learning model
+│   ├── evaluate.py           # Script for evaluating the model's performance
+│   ├── predict.py            # Script for making predictions using the trained model
+│   ├── requirements.txt      # Python dependencies required for the backend
+├── .dvcignore                 # Specifies files/folders that should be ignored by DVC
+├── .gitignore                 # Specifies files/folders that should be ignored by Git
+├── dockerfile                 # Dockerfile to build the Docker image for the main application
+├── README.md                  # read me file
+├── docker-compose.yaml        # Docker Compose file to set up and run multi-container Docker applications
+├── requirements.txt           # Python dependencies required for running the project locally
+├── sampled_data.dvc
+├── sampled_data_entry.csv.dvc
+
+
+
+```
 ## Prerequisites 
 #### 1. Softwares to be installed
 Before you start, please make sure that the following are already installed in your machine, if not please install them.
@@ -70,61 +111,6 @@ pip install -r requirements.txt
 ```
 git clone https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification.git
 ```
-
-## Git Repo and Project Structure
-**Project Structure**
-```
-├── .dvc
-│   ├── config                # Configuration file for DVC (Data Version Control)
-│   ├── .gitignore            # Specifies files/folders related to DVC to be ignored by Git
-├── data
-│   ├── training              # Directory containing preprocessed training data
-│   │   ├── ....
-│   ├── validation            # Directory containing preprocessed validation data
-│   │   ├── ....
-│   ├── testing           # Directory containing preprocessed testing data
-│   │   ├── ....
-├── frontend
-│   ├── app.py                # Main script for the frontend application (e.g., user interface)
-│   ├── dockerfile            # Dockerfile to build the Docker image for the frontend
-│   ├── requirements.txt      # Python dependencies required for the frontend
-│   ├── kubernetes
-│   │   ├── deployment.yaml   # Kubernetes deployment configuration for the frontend
-│   │   ├── namespace.yaml    # Kubernetes namespace configuration for organizing resources
-│   │   ├── service.yaml      # Kubernetes service configuration for exposing the frontend
-├── backend
-│   ├── model.py              # Defines the model architecture for training
-│   ├── train.py              # Script for training the machine learning model
-│   ├── evaluate.py           # Script for evaluating the model's performance
-│   ├── predict.py            # Script for making predictions using the trained model
-│   ├── requirements.txt      # Python dependencies required for the backend
-├── src
-│   ├── preprocessing
-│   │   ├── image_processing.py # Functions for preprocessing raw images (e.g., resizing, normalization)
-│   ├── utils
-│   │   ├── metrics.py          # Utility functions for calculating evaluation metrics (e.g., accuracy, precision)
-│   │   ├── logger.py           # Provides functions for logging messages, warnings, and errors
-│   ├── config
-│   │   ├── config.yaml         # YAML file containing configuration settings for the project
-│   ├── datapipeline.py         # Script handling the end-to-end data pipeline (loading, preprocessing, transforming)
-│   └── keys
-│       ├── keyfile.json        # Contains sensitive information (e.g., API keys, credentials)
-├── logs
-|   ├── ...                    # Placeholder for log files generated during model training, evaluation, etc.
-├── assets                     # Stores images, visualizations, and graphs.
-├── notebooks
-|   ├── EDA.ipynb              # Jupyter notebook for Exploratory Data Analysis (EDA) of the dataset
-├── .dvcignore                 # Specifies files/folders that should be ignored by DVC
-├── .gitignore                 # Specifies files/folders that should be ignored by Git
-├── data.dvc                   # DVC file tracking large data files in the `data` directory
-├── dockerfile                 # Dockerfile to build the Docker image for the main application
-├── docker-compose.yaml        # Docker Compose file to set up and run multi-container Docker applications
-├── entrypoint.sh              # Shell script defining startup commands for the Docker container
-├── requirements.txt           # Python dependencies required for running the project locally
-
-
-```
-
 
 ## Data Storage and Model Registry
 ## Pipeline

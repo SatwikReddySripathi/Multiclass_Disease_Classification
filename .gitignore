@@ -136,3 +136,6 @@ cython_debug/
 config/black-resource-440218-c3-5c0b7f31ce1f.json
 Processed_Data/raw_compressed_data_old.pkl
 Processed_Data/raw_compressed_data.pkl
+config/labels_to_indices.json
+Processed_Data/preprocessed_data.pkl
+Processed_Data/schema.pbtxt

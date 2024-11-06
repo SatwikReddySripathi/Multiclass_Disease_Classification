@@ -19,15 +19,25 @@ from IPython.display import display
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
-log_directory = '/content/drive/My Drive/MLOPs Project'  
-log_filename = 'logs.log'
-log_file_path = os.path.join(log_directory, log_filename)
+# log_directory = '/content/drive/My Drive/MLOPs Project'  
+# log_filename = 'logs.log'
+# log_file_path = os.path.join(log_directory, log_filename)
+
+PROJECT_DIR = '/opt/airflow'
+LOG_DIR = os.path.join(PROJECT_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(LOG_DIR, 'preprocessing.log')
+PICKLE_DIR = os.path.join(PROJECT_DIR, "Processed_Data")
+ORIGINAL_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'raw_compressed_data.pkl')
+PREPROCESSED_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'preprocessed_data.pkl')
+CONFIG_DIR = os.path.join(PROJECT_DIR, "config")
+LABEL_JSON_PATH = os.path.join(PICKLE_DIR, 'labels_to_indices.json')
 
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
 
-file_handler = logging.FileHandler(log_file_path)
+file_handler = logging.FileHandler(LOG_FILE_PATH)
 file_handler.setLevel(logging.DEBUG)
 
 console_handler = logging.StreamHandler()
@@ -40,7 +50,7 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-logger.info("Logging configuration is set. Logs will be saved to: {}".format(log_file_path))
+logger.info("Logging configuration is set. Logs will be saved to: {}".format(LOG_FILE_PATH))
 
 
 def load_label_indices(json_path):
@@ -260,7 +270,9 @@ def process_images(original_data_pickle, preprocessed_data_pickle, label_json_pa
   finally:
     logging.info("Image processing completed.")
 
-
+def process_images_airflow():
+  
+  process_images(ORIGINAL_PICKLE_FILE_PATH, PREPROCESSED_PICKLE_FILE_PATH, LABEL_JSON_PATH)
 """
 original_data_pickle= "raw_compressed_data.pkl"
 preprocessed_data_pickle= "preprocessed_compressed_data.pkl"

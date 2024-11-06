@@ -184,7 +184,9 @@ In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the
 ![Airflow Dags](assets/airflow_dags.png)
 
 ## Optimized Pipeline:
-Airflow DAG Implementation Data Pipeline Gantt Chart. It is a well-liked project management application for tracking and visualizing tasks or activities across time. It offers a visual depiction of a pipeline's timetable, indicating the start and end times of each task. Below is the visualisartion of the DAGs execution
+The optimized data pipeline in Airflow efficiently processes data through a series of stages. It starts with **Data Extraction** to gather raw data, followed by **Data Schema** validation to ensure consistency. **Anomaly Detection** then identifies outliers, improving data quality. **Image Preprocessing** prepares images through resizing and transformations, aligning them with model requirements. Finally, **Upload Data** stores the processed data for downstream applications.
+
+The Gantt chart shows an efficient timeline, with **Data Extraction** occupying the longest duration, followed by swift transitions through subsequent stages. This design enables rapid, accurate data processing, supporting a scalable and robust end-to-end workflow.
 ![Airflow gantt](assets/airflow_gantt_chart.png)
 
 ## Data Versioning:

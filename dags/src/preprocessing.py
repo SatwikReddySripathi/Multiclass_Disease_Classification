@@ -19,10 +19,6 @@ from IPython.display import display
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
-# log_directory = '/content/drive/My Drive/MLOPs Project'  
-# log_filename = 'logs.log'
-# log_file_path = os.path.join(log_directory, log_filename)
-
 PROJECT_DIR = '/opt/airflow'
 LOG_DIR = os.path.join(PROJECT_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -273,12 +269,3 @@ def process_images(original_data_pickle, preprocessed_data_pickle, label_json_pa
 def process_images_airflow():
   
   process_images(ORIGINAL_PICKLE_FILE_PATH, PREPROCESSED_PICKLE_FILE_PATH, LABEL_JSON_PATH)
-"""
-original_data_pickle= "raw_compressed_data.pkl"
-preprocessed_data_pickle= "preprocessed_compressed_data.pkl"
-csv_path = '/content/drive/My Drive/MLOPs Project/sampled_train_data_entry.csv'
-label_json_path = '/content/drive/My Drive/MLOPs Project/label_to_indices.json'
-
-process_images(original_data_pickle, preprocessed_data_pickle, label_json_path, is_training=False)
-
-"""

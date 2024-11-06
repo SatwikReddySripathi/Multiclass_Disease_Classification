@@ -150,7 +150,7 @@ read me about `preprocessing.py`
 
 ## Data Piepline:
 This is our data pipeline which includes key-functioning components:
-![data_pipeline](assets/data_pipeline.jpeg)
+![data_pipeline](assets/data_pipeline.PNG)
 
 ## Airflow Dags:
 In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies.A DAG is defined in a Python script, which represents the DAGs structure (tasks and their dependencies) as code. Below is the structure of dag which is being executed:

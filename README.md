@@ -185,4 +185,3 @@ Airflow DAG Implementation Data Pipeline Gantt Chart. It is a well-liked project
 * [@vamsijilla](https://github.com/vamsijilla)
 * [@malkarsaidheeraj](https://github.com/malkarsaidheeraj)
 
-## Acknowledgments

@@ -1,19 +1,6 @@
 # Multiclass_Disease_Classification
 This project is designed to develop, deploy, and maintain a machine learning model for multiclass disease classification of chest X-rays. It utilizes a Machine Learning Operations (MLOps) framework to ensure seamless development, deployment, and continuous monitoring of the model. The project follows best practices for reproducibility, modularity, and scalability.
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Dataset Information](#dataset-information)
-3. [Project Workflow](#project-workflow)
-4. [Prerequisites](#prerequisites)
-5. [Git Repo and Project Structure](#git-repo-and-project-structure)
-6. [Data Storage and Model Registry](#data-storage-and-model-registry)
-7. [Pipeline](#pipeline)
-8. [Application Interface](#application-interface)
-9. [Monitoring Dashboard](#monitoring-dashboard)
-10. [Contributors](#contributors)
-11. [Acknowledgments](#acknowledgments)
-
 ## Introduction
 Thoracic diseases, such as pneumonia, emphysema, and cardiomegaly, are significant health concerns globally, affecting millions of people each year. In the United States alone, respiratory diseases contribute to a high percentage of hospitalizations and healthcare costs. Accurate diagnosis of these conditions is crucial for effective treatment, yet traditional diagnostic methods rely heavily on manual analysis of medical images like chest X-rays. This process can be time-consuming and subject to human error, especially in areas with limited access to trained radiologists.
 
@@ -99,7 +86,7 @@ This is the basic Project Flow and this will be updated after the final system a
 
 
 ```
-## Installatioon
+## Installation
 This project requires Python version 3.8 or higher. Please ensure that the correct Python version is installed on your device. The project is compatible with Windows, Linux, and macOS operating systems.
 
 #### Pre-requisites
@@ -144,6 +131,7 @@ This is the crucial open source tool to track the changes in the data through ou
 
 ## Google Cloud Computing:
 Google Cloud Platform is a suite of cloud computing services offered by Google that provides a series of modular cloud services including computing, data storage, data analytics, and machine learning, alongside a set of management tools. For this project, One must create a service account on google platform services: https://console.cloud.google.com/. One must create a GCP Bucket and store data and models for the efficient performance of the project.
+![gcp_bucket](assets/gcp_bucket.jpeg)
 
 ## Integration of Docker and Airflow:
 The code essential to execute Airflow is located in the `docker-compose.yaml` file. We can deliver our data pipeline with the necessary dependencies installed by using Docker and containerization. This makes it platform independent, so our data pipeline will work effectively on Windows, Mac, or Linux.
@@ -159,6 +147,10 @@ The `anomaly_detection.py` script is a utility within this project that performs
 
 ## Augmentation and Pre-processing:
 read me about `preprocessing.py`
+
+## Data Piepline:
+This is our data pipeline which includes key-functioning components:
+![data_pipeline](assets/data_pipeline.jpeg)
 
 ## Airflow Dags:
 In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies.A DAG is defined in a Python script, which represents the DAGs structure (tasks and their dependencies) as code. Below is the structure of dag which is being executed:

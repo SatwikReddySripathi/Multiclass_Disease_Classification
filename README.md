@@ -1,6 +1,33 @@
 # Multiclass Thoracic Disease Classification
 This project is designed to develop, deploy, and maintain a machine learning model for multiclass disease classification of chest X-rays. It utilizes a Machine Learning Operations (MLOps) framework to ensure seamless development, deployment, and continuous monitoring of the model. The project follows best practices for reproducibility, modularity, and scalability.
 
+
+# Table of Contents
+
+- [Multiclass Thoracic Disease Classification](#multiclass-thoracic-disease-classification)
+  - [Introduction](#introduction)
+  - [Dataset Information](#dataset-information)
+    - [DataCard](#datacard)
+    - [Disease Categories - Labels](#disease-categories---labels)
+  - [Project Workflow](#project-workflow)
+  - [Git Repo and Project Structure](#git-repo-and-project-structure)
+  - [Installation](#installation)
+    - [Pre-requisites](#pre-requisites)
+    - [User Installation](#user-installation)
+  - [DVC (Data Version Control)](#dvc-data-version-control)
+  - [Google Cloud Computing](#google-cloud-computing)
+  - [Integration of Docker and Airflow](#integration-of-docker-and-airflow)
+  - [Data Extraction](#data-extraction)
+  - [Schema and Statistics Generation](#schema-and-statistics-generation)
+  - [Anomalies Detection](#anomalies-detection)
+  - [Augmentation and Pre-processing](#augmentation-and-pre-processing)
+  - [Data Pipeline](#data-pipeline)
+  - [Airflow Dags](#airflow-dags)
+  - [Optimized Pipeline](#optimized-pipeline)
+  - [Data Versioning](#data-versioning)
+  - [Contributors](#contributors)
+
+
 ## Introduction
 Thoracic diseases, such as pneumonia, emphysema, and cardiomegaly, are significant health concerns globally, affecting millions of people each year. In the United States alone, respiratory diseases contribute to a high percentage of hospitalizations and healthcare costs. Accurate diagnosis of these conditions is crucial for effective treatment, yet traditional diagnostic methods rely heavily on manual analysis of medical images like chest X-rays. This process can be time-consuming and subject to human error, especially in areas with limited access to trained radiologists.
 

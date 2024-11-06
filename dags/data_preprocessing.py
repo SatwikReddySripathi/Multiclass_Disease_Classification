@@ -12,7 +12,7 @@ import logging
 # sys.path.append('/opt/airflow/src')
 
 from src.preprocessing import process_images_airflow
-from src.cloud_data_management import extracting_data_from_gcp
+from src.cloud_data_management import extracting_data_from_gcp, upload_data_to_gcp
 from src.schema_generation import validate_data_schema
 from src.anomaly_detection import anomalies_detect
 # from airflow.operators.email import EmailOperator
@@ -84,12 +84,17 @@ with DAG(DAG_NAME, default_args=default_args, schedule_interval=None, catchup=Fa
         python_callable=process_images_airflow,
     )
 
+    upload_data = PythonOperator(
+        task_id='Upload_Data',
+        python_callable=upload_data_to_gcp,
+    )
+
     end = DummyOperator(
         task_id='end'
     )
 
     # Set task dependencies
     # start >> extracting_data >> anomaly_detection >> end
-    start >> extracting_data >> data_schema >> anomaly_detection >> preprocess_task >> end
+    start >> extracting_data >> data_schema >> anomaly_detection >> preprocess_task >> upload_data >> end
 
 logging.info("DAG loaded successfully")

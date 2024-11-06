@@ -160,13 +160,13 @@ The `anomaly_detection.py` script is a utility within this project that performs
 ## Augmentation and Pre-processing:
 read me about `preprocessing.py`
 
-## Optimized Pipeline:
-![alt text](assets/airflow_gantt chart.png)
-
 ## Airflow Dags:
 In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies.A DAG is defined in a Python script, which represents the DAGs structure (tasks and their dependencies) as code. Below is the structure of dag which is being executed:
 ![Airflow Dags](assets/airflow_dags.png)
 
+## Optimized Pipeline:
+Airflow DAG Implementation Data Pipeline Gantt Chart. It is a well-liked project management application for tracking and visualizing tasks or activities across time. It offers a visual depiction of a pipeline's timetable, indicating the start and end times of each task. Below is the visualisartion of the DAGs execution
+![Airflow gantt](assets/airflow_gantt_chart.png)
 
 
 

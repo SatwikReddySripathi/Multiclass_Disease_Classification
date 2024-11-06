@@ -97,9 +97,12 @@ This is the basic Project Flow and this will be updated after the final system a
 
 
 
+
 ```
-## Prerequisites 
-#### 1. Softwares to be installed
+## Installatioon
+This project requires Python version 3.8 or higher. Please ensure that the correct Python version is installed on your device. The project is compatible with Windows, Linux, and macOS operating systems.
+
+#### Pre-requisites
 Before you start, please make sure that the following are already installed in your machine, if not please install them.
 - Git
 - Docker
@@ -108,14 +111,33 @@ Before you start, please make sure that the following are already installed in y
 - Python 3
 - Pip
 
-#### 2. Dependencies installation
-```
-pip install -r requirements.txt
-```
-#### 3. Clone the repositry
-```
-git clone https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification.git
-```
+###  User Installation:
+User should follow the below steps:
+1. Clone the repository onto your local machine:
+   ```
+   git clone https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification.git
+   ```
+2. Access files: .JSON files which are credentials to GCP Bucket and Drive should be stored in config folder
+3. Build Docker Image:
+   In Mac:
+   ```
+   docker compose build
+   ```
+   In windows:
+   ```
+   docker-compose build
+   ```
+4. Run the docker image:
+   ```
+   docker compose up
+   ``` 
+5. . To view Airflow dags on the web server, visit https://localhost:8080 and log in with credentials
+   ```
+   user: airflow
+   password: airflow
+   ```
+6. Run the DAG by clicking on the play button on the right side of the window
+7. To stop the docker containers: click ctrl+c in the terminal to kill all the containers
 
 ## Data Storage and Model Registry
 ## Pipeline

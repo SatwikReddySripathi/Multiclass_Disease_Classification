@@ -102,6 +102,24 @@ def extracting_data_from_gcp(bucket_name):
 
     download_and_compress_images(bucket, final_json, output_pickle_file)
 
+def upload_data_to_gcp():
+
+    # Initialize a client
+    storage_client = storage.Client(project = 'black-resource-440218-c3')
+    bucket_name = 'nih-dataset-mlops'
+    file_path = 'Processed_Data'
+    blob_folder_name = 'Data_Preprocessing_files'
+    blob_name = 'preprocessed_data.pkl'
+    # Get the bucket
+    bucket = storage_client.get_bucket(bucket_name)
+    # Create a blob object
+    blob = bucket.blob(blob_folder_name +"/"+blob_name)
+    # Upload the file
+    blob.upload_from_filename(os.path.join(PROJECT_DIR, file_path, blob_name))
+
+    print(f"File {blob_name} uploaded to {file_path}")
+    # print("Need to write codes")
+# upload_data_to_gcp()
 # bucket_name = 'nih-dataset-mlops'
 # md5_hashes = find_md5_hashes(PROJECT_DIR)
 # print("Extracted MD5 hashes:", md5_hashes)

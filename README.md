@@ -170,10 +170,6 @@ Airflow DAG Implementation Data Pipeline Gantt Chart. It is a well-liked project
 
 
 
-## Data Storage and Model Registry
-## Pipeline
-## Application Interface
-## Monitoring Dashboard
 ## Contributors
 [![MLOPs contributors](https://contrib.rocks/image?repo=SatwikReddySripathi/Multiclass_Disease_Classification)](https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification/graphs/contributors)
 

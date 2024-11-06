@@ -28,10 +28,7 @@ def print_directory_contents(path):
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PROJECT_DIR2 = os.path.join(PROJECT_DIR, 'dags', 'src','data')
-# dags/src/data/sampled_data_entry.csv.dvc
-# PROJECT_DIR = '/opt/airflow'
 OUTPUT_DIR = os.path.join(PROJECT_DIR, 'Processed_Data', 'raw_compressed_data.pkl')
-# PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__name__))))
 KEY_PATH = os.path.join(PROJECT_DIR, "config", "black-resource-440218-c3-5c0b7f31ce1f.json")
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = KEY_PATH
@@ -58,27 +55,8 @@ def list_blobs(bucket_name):
     print(i)
 
 
-# bucket_name = 'nih-dataset-mlops'
-# list_blobs(bucket_name)
-
-# # bucket_name = 'nih-dataset-mlops'
-# # blob_name = 'files/md5/ff/f9357b1df5cc88a7b3c3a32082a041'
-# view_blob_content(bucket_name,blob_name)
-
 def extracting_data_from_gcp(bucket_name):
 
-    # Run the function to get MD5 hashes
-    # print(f"KEY_PATH: {KEY_PATH}")
-    # print(f"PROJECT_DIR: {PROJECT_DIR}")
-    # print(f"OUTPUT_DIR: {OUTPUT_DIR}")
-    print("This is PROJECT_DIR")
-    print_directory_contents(PROJECT_DIR)
-    # print("This is KEY_PATH")
-    # print_directory_contents(KEY_PATH)
-    # print("This is OUTPUT_DIR")
-    # print_directory_contents(OUTPUT_DIR)
-    # print(PROJECT_DIR)
-    # print(OUTPUT_DIR)
     md5_hashes = find_md5_hashes(PROJECT_DIR2)
 
     # Print all extracted MD5 hashes
@@ -118,11 +96,3 @@ def upload_data_to_gcp():
     blob.upload_from_filename(os.path.join(PROJECT_DIR, file_path, blob_name))
 
     print(f"File {blob_name} uploaded to {file_path}")
-    # print("Need to write codes")
-# upload_data_to_gcp()
-# bucket_name = 'nih-dataset-mlops'
-# md5_hashes = find_md5_hashes(PROJECT_DIR)
-# print("Extracted MD5 hashes:", md5_hashes)
-# storage_client = storage.Client(project = 'black-resource-440218-c3')
-# bucket_name = 'nih-dataset-mlops'
-# bucket = storage_client.get_bucket(bucket_name)

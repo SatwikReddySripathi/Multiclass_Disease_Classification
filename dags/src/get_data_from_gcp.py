@@ -15,7 +15,6 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 airflow_logger = LoggingMixin().log
 # Set the project directory
 PROJECT_DIR = '/opt/airflow'
-# PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOG_DIR = os.path.join(PROJECT_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE_PATH = os.path.join(LOG_DIR, 'data_extraction.log')

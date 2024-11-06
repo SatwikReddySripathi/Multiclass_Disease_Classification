@@ -7,17 +7,11 @@ from airflow import configuration as conf
 import os
 import sys
 import logging
-# Adjust this path to match the absolute or relative path to the parent directory containing `Data`
-# sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
-# sys.path.append('/opt/airflow/src')
 
 from src.preprocessing import process_images_airflow
 from src.cloud_data_management import extracting_data_from_gcp, upload_data_to_gcp
 from src.schema_generation import validate_data_schema
 from src.anomaly_detection import anomalies_detect
-# from airflow.operators.email import EmailOperator
-# from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-# from airflow.utils.trigger_rule import TriggerRule
 
 # Set the logging directory to a known directory inside the Airflow container
 LOG_DIR = '/opt/airflow/logs'
@@ -94,7 +88,6 @@ with DAG(DAG_NAME, default_args=default_args, schedule_interval=None, catchup=Fa
     )
 
     # Set task dependencies
-    # start >> extracting_data >> anomaly_detection >> end
     start >> extracting_data >> data_schema >> anomaly_detection >> preprocess_task >> upload_data >> end
 
 logging.info("DAG loaded successfully")

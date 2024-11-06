@@ -168,6 +168,19 @@ In Airflow, a DAG – or a Directed Acyclic Graph – is a collection of all the
 Airflow DAG Implementation Data Pipeline Gantt Chart. It is a well-liked project management application for tracking and visualizing tasks or activities across time. It offers a visual depiction of a pipeline's timetable, indicating the start and end times of each task. Below is the visualisartion of the DAGs execution
 ![Airflow gantt](assets/airflow_gantt_chart.png)
 
+## Data Versioning:
+1. Initialize dvc in the directory
+    ```python
+    dvc init
+    ```
+2. Set up remote GCP connection.
+    ```python
+    dvc remote add -d myremote gs://<bucket>/<path>
+    ```
+3. Setting .JSON Credential path
+    ```python
+    dvc remote modify myremote credentialpath <GOOGLE-KEY-JSON-PATH>
+    ```
 
 
 ## Contributors

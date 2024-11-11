@@ -8,6 +8,47 @@ import json
 from google.cloud import storage
 import pickle
 from PIL import Image
+import logging
+from airflow.utils.log.logging_mixin import LoggingMixin
+
+# Set up Airflow logger
+airflow_logger = LoggingMixin().log
+# Set the project directory
+PROJECT_DIR = '/opt/airflow'
+LOG_DIR = os.path.join(PROJECT_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(LOG_DIR, 'data_extraction.log')
+
+
+logger = logging.getLogger('file_logger')
+logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages
+
+file_handler = logging.FileHandler(LOG_FILE_PATH)
+file_handler.setLevel(logging.DEBUG)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+logger.info("Logging configuration is set. Logs will be saved to: {}".format(LOG_FILE_PATH))
+
+def custom_log(message, level=logging.INFO):
+    """Log to both Airflow and custom file logger"""
+    if level == logging.INFO:
+        airflow_logger.info(message)
+        logger.info(message)
+    elif level == logging.ERROR:
+        airflow_logger.error(message)
+        logger.error(message)
+    elif level == logging.WARNING:
+        airflow_logger.warning(message)
+        logger.warning(message)
 
 
 def extract_md5_from_dvc(file_path):

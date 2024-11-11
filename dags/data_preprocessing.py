@@ -1,4 +1,3 @@
-
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
@@ -7,70 +6,88 @@ from airflow import configuration as conf
 
 import os
 import sys
-# Adjust this path to match the absolute or relative path to the parent directory containing `Data`
-# sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
-sys.path.append('/opt/airflow/src')
+import logging
 
-from src.preprocessing import process_images
-# from airflow.operators.email import EmailOperator
-# from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-# from airflow.utils.trigger_rule import TriggerRule
+from src.preprocessing import process_images_airflow
+from src.cloud_data_management import extracting_data_from_gcp, upload_data_to_gcp
+from src.schema_generation import validate_data_schema
+from src.anomaly_detection import anomalies_detect
 
-# Enable pickle support for XCom
+# Set the logging directory to a known directory inside the Airflow container
+LOG_DIR = '/opt/airflow/logs'
+LOG_FILE_PATH = os.path.join(LOG_DIR, 'data_preprocessing.log')
+
+# Ensure the logs directory exists
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Configure logging to write to the specified file
+logging.basicConfig(filename=LOG_FILE_PATH, level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+bucket_name = 'nih-dataset-mlops'
+
+# Add the source directory to the path for imports
+sys.path.append('/opt/airflow/dags/src')
+
+from src.preprocessing import process_images  # Ensure this path is valid in your container
+
+# Enable pickle support for XCom (if required by your tasks)
 conf.set('core', 'enable_xcom_pickling', 'True')
 
-# Set up custom file logger
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOG_DIR = os.path.join(PROJECT_DIR, "logs")
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE_PATH = os.path.join(LOG_DIR, 'airflow.log')
-
-DAG_NAME = 'Data_Preprocessing_Steps'
-
-
-original_data_folder = '/content/drive/My Drive/MLOPs Project/sampled_data'
-preprocessed_data_folder = '/content/drive/My Drive/MLOPs Project/preprocessed_data'
-csv_path = '/content/drive/My Drive/MLOPs Project/sampled_train_data_entry.csv'
-label_json_path = '/content/drive/My Drive/MLOPs Project/label_indices.json'
-
+# DAG definition
+DAG_NAME = 'Data_Preprocessing_Step'
 default_args = {
-    'owner': 'MLOPs_Team10',
+    'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 10, 11),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1
+    'start_date': datetime(2023, 1, 1),
+    'retries': 1,
 }
 
-dag = DAG(
-    DAG_NAME,
-    default_args=default_args,
-    description='MLOps Data pipeline',
-    schedule_interval=None,  # Set the schedule interval or use None for manual triggering
-    catchup=False,
-    tags=['Group10']
+with DAG(DAG_NAME, default_args=default_args, schedule_interval=None, catchup=False) as dag:
+    
+    start = DummyOperator(
+        task_id='start'
     )
 
-start_task = DummyOperator(
-    task_id='Start',
-    dag=dag
-)
+    extracting_data = PythonOperator(
+        task_id='Data_Extraction',
+        python_callable=extracting_data_from_gcp,
+        op_kwargs={
+            'bucket_name': bucket_name
+        }
+    )
 
-end_task = DummyOperator(
-    task_id='End',
-    dag=dag
-)
+    data_schema = PythonOperator(
+        task_id='Data_Schema',
+        python_callable=validate_data_schema,
+        op_kwargs={
+            'bucket_name': bucket_name
+        }
+    )
 
-process_images_task = PythonOperator(
-    task_id='Process_Images',
-    python_callable=process_images,
-    op_kwargs={
-        'original_data_folder': original_data_folder,
-        'preprocessed_data_folder': preprocessed_data_folder,
-        'csv_path': csv_path,
-        'label_json_path': label_json_path
-    },
-    dag=dag
-)
+    anomaly_detection = PythonOperator(
+        task_id='Anomaly_Detection',
+        python_callable=anomalies_detect,
+        op_kwargs={
+            'bucket_name': bucket_name
+        }
+    )
 
-start_task >> process_images_task >> end_task
+    preprocess_task = PythonOperator(
+        task_id='Preprocssing_images',
+        python_callable=process_images_airflow,
+    )
+
+    upload_data = PythonOperator(
+        task_id='Upload_Data',
+        python_callable=upload_data_to_gcp,
+    )
+
+    end = DummyOperator(
+        task_id='end'
+    )
+
+    # Set task dependencies
+    start >> extracting_data >> data_schema >> anomaly_detection >> preprocess_task >> upload_data >> end
+
+logging.info("DAG loaded successfully")

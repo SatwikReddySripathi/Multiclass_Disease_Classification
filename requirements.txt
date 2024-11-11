@@ -10,3 +10,10 @@ tqdm
 Pillow
 tensorflow
 google-cloud-storage
+pyyaml
+matplotlib
+seaborn
+imblearn
+kneed
+tensorflow-data-validation
+IPython

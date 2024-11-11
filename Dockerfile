@@ -1,4 +1,4 @@
-FROM apache/airflow:2.9.2-python3.7
+FROM apache/airflow:2.5.1-python3.7
 
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -9,3 +9,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 USER airflow
 COPY requirements.txt /requirements.txt
 RUN pip install --no-cache-dir -r /requirements.txt
+RUN pip install pyopenssl==23.2.0 cryptography==39.0.0

@@ -109,7 +109,7 @@ def get_file_contents_as_dict(bucket, md5_keys):
                     print(f"Parsing CSV content for {blob.name}...")
                     custom_log(f"Parsing CSV content for {blob.name}...")
                     csv_reader = csv.DictReader(StringIO(content))
-                    csv_data = {row['Image Index']: row['Labels'] for row in csv_reader}
+                    csv_data = {row['Image Index']: [row['Labels'],row['Age'],row['Gender']] for row in csv_reader}
                     print(f"CSV content loaded for {blob.name}.")
                     custom_log(f"CSV content loaded for {blob.name}.")
     
@@ -124,13 +124,17 @@ def create_final_json(json_content_dict, csv_content_dict):
             
             # Check if there's a matching label in the CSV content
             if relpath in csv_content_dict.keys():
-                image_label = csv_content_dict[relpath]
+                image_label = csv_content_dict[relpath][0]
+                Age = csv_content_dict[relpath][1]
+                Gender = csv_content_dict[relpath][2]
                 
                 # Create the final JSON structure for each matched entry
                 final_data.append({
                     'md5': item['md5'],
                     'image_index': relpath,
-                    'image_label': image_label
+                    'image_label': image_label,
+                    'Age': Age,
+                    'Gender': Gender
                 })
                 
     return final_data
@@ -143,6 +147,8 @@ def download_and_compress_images(bucket, md5_image_data, output_pickle_file):
         md5 = item["md5"]
         image_index = item["image_index"]
         image_label = item["image_label"]
+        image_Age = item["Age"]
+        image_Gender = item["Gender"]
 
         # Attempt to download the image from GCP bucket
         blob = bucket.blob(f'files/md5/{md5[:2]}/{md5[2:]}')
@@ -166,7 +172,7 @@ def download_and_compress_images(bucket, md5_image_data, output_pickle_file):
             compressed_image.seek(0)  # Rewind the buffer
             
             # Store compressed image in dictionary
-            compressed_images[image_index] = {'image_data': compressed_image.getvalue(), 'image_label': image_label}
+            compressed_images[image_index] = {'image_data': compressed_image.getvalue(), 'image_label': image_label,'Age': image_Age,'Gender': image_Gender}
             print(f"Compressed and stored image: {image_index}")
             custom_log(f"Compressed and stored image: {image_index}")
 
@@ -179,5 +185,9 @@ def download_and_compress_images(bucket, md5_image_data, output_pickle_file):
         pickle.dump(compressed_images, f)
         print(f"All compressed images saved to {output_pickle_file}")
         custom_log(f"All compressed images saved to {output_pickle_file}")
+
+
+
+
 
 

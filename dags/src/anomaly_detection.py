@@ -135,35 +135,39 @@ def check_image_data(df):
     
     print("All images are in grayscale (JPEG-compatible) format.")
 
-
 def check_missing_or_invalid_labels(df):
-    """Check for missing or invalid labels. Each label should be an integer or a list of integers."""
-    # Check for missing labels
-    missing_labels = df['image_label'].isna().sum()
-    invalid_labels = []
+  
+  missing_labels = df['image_label'].isna().sum() 
+  invalid_labels = []
+  allowed_labels = [
+        'Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass',
+        'Nodule', 'Pneumonia', 'Pneumothorax', 'Consolidation', 'Edema',
+        'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia', 'No Finding'
+    ]
 
-    for index, label in df['image_label'].items():
-        try:
+  for index, row in df.iterrows():
+      try:
             # Convert string representation of list to actual list
-            label = ast.literal_eval(label)
+          labels = ast.literal_eval(row['image_label'])
             
-            # Check if the label is either an integer or a list of integers
-            if not (isinstance(label, int) or (isinstance(label, list) and all(isinstance(i, int) for i in label))):
-                invalid_labels.append(index)
-        except (ValueError, SyntaxError):
-            # Handle cases where the string cannot be converted
-            invalid_labels.append(index)
-
-    if missing_labels > 0:
-        print(f"Found {missing_labels} missing labels.")
-        custom_log(f"Found {missing_labels} missing labels.")
-    if invalid_labels:
-        print(f"Invalid labels found at indices: {invalid_labels}")
-        custom_log(f"Invalid labels found at indices: {invalid_labels}")
-    else:
-        print("All labels are valid and correctly formatted as integers or lists of integers.")
-        custom_log("All labels are valid and correctly formatted as integers or lists of integers.")
-
+            # Check if all labels are in allowed labels
+          if isinstance(labels, list) and all(label in allowed_labels for label in labels):
+              continue  # Valid labels, continue to next row
+          else:
+                # If any label is invalid or the format is incorrect
+              invalid_labels.append((index, row['image_label']))
+      except (ValueError, SyntaxError) as e:
+            # Handle cases where the string cannot be converted into a list
+            invalid_labels.append((index, row['image_label']))
+  if missing_labels > 0:
+    print(f"Found {missing_labels} missing labels.")
+    custom_log(f"Found {missing_labels} missing labels.")
+  if invalid_labels:
+      print("Invali Labels:",invalid_labels)
+      custom_log(f"Invalid labels found at indices: {invalid_labels}")
+  else:
+      print("All labels are valid")
+      custom_log("All labels are valid")
 
 
 def check_class_distribution(df):
@@ -204,6 +208,34 @@ def check_image_dimensions(df):
         custom_log(f"All images have the same dimension: {most_common_dim}")
 
 
+def check_gender_age_anomalies(df):
+#  Check for missing gender and age values
+    missing_gender = df['Gender'].isna().sum()
+    missing_age = df['Age'].isna().sum()
+
+    if missing_gender > 0:
+        print(f"Missing gender values: {missing_gender}")
+        custom_log(f"Missing gender values: {missing_gender}")
+    if missing_age > 0:
+        print(f"Missing age values: {missing_age}")
+        custom_log(f"Missing age values: {missing_age}")
+
+    # Check for unrealistic age values
+    invalid_age = df[df['Age'] < 0]
+    if not invalid_age.empty:
+        print(f"Invalid age values (negative ages):\n{invalid_age[['Age']]}")
+        custom_log(f"Invalid age values (negative ages):\n{invalid_age[['Age']]}")
+    
+    # Check for out-of-bound ages (greater than 120)
+    out_of_range_age = df[df['Age'] > 100]
+    if not out_of_range_age.empty:
+        print(f"Out of range age values (greater than 100):\n{out_of_range_age[['Age']]}")
+        custom_log(f"Out of range age values (greater than 100):\n{out_of_range_age[['Age']]}")
+    else:
+        print(f"All Ages and Genders are valid")
+        custom_log(f"All Ages and Genders are valid")
+
+
 def anomalies_detect():
     """Main function to execute the next data processing task."""
     print("Starting next data processing task...")
@@ -224,6 +256,7 @@ def anomalies_detect():
     check_image_dimensions(df)
     check_missing_or_invalid_labels(df)
     check_class_distribution(df)
+    check_gender_age_anomalies(df)
     
     print("Anomalies in Evaluation:")
     custom_log("Anomalies in Evaluation:")

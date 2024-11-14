@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  GCP_PROJECT_ID: secrets.black-resource-440218-c3  # Your GCP Project ID
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}   # Your GCP Project ID
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}          # The service account key stored as a secret
   IMAGE_NAME: 'hello-world-image'
   REGISTRY: 'us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models'

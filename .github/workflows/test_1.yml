@@ -38,7 +38,7 @@ jobs:
       # Step 4: Build and Push Docker Image
       - name: Build and Push Docker Image
         run: |
-          docker build -t $REGISTRY/$IMAGE_NAME:latest .
+          docker build -f DockerFiletwo -t $REGISTRY/$IMAGE_NAME:latest .
           docker push $REGISTRY/$IMAGE_NAME:latest
 
       # Step 5: Run Hello World from Docker Image

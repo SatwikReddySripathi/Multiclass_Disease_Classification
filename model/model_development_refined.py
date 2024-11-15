@@ -3,6 +3,7 @@
 
 
 import io
+import os
 import ast
 import torch
 import pickle
@@ -227,9 +228,9 @@ def evaluate_model(test_loader, model, criterion, precision_metric, recall_metri
 
 
 if __name__ == "__main__":
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  config = {
-      "file_path": os.path.join(PROJECT_DIR, "model", "preprocessed_dummy_data.pkl")
+    PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config = {
+      "file_path": os.path.join(PROJECT_DIR, "model", "preprocessed_dummy_data.pkl"),
       "batch_size": 32,
       "num_epochs": 10,
       "learning_rate": 1e-5,
@@ -237,28 +238,21 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
       "num_classes": 15,
       "train_percent": 0.7,
       "val_percent": 0.1
-  }
-
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  train_loader, val_loader, test_loader = load_data(config["file_path"], config["batch_size"], config["train_percent"], config["val_percent"])
-
-  model = CustomResNet18(num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
-  freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"])
-
-  criterion = nn.BCEWithLogitsLoss()
-  optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config["learning_rate"])
-
-  """precision_metric = torchmetrics.Precision(average='micro').to(device)
-  recall_metric = torchmetrics.Recall(average='micro').to(device)
-  f1_metric = torchmetrics.F1Score(average='micro').to(device)"""
-
-  precision_metric = MultilabelPrecision(num_labels= config["num_classes"], average='macro').to(device)
-  recall_metric = MultilabelRecall(num_labels= config["num_classes"], average='macro').to(device)
-  f1_metric = MultilabelF1Score(num_labels= config["num_classes"], average='macro').to(device)
-
-  train_model(train_loader, val_loader, model, criterion, optimizer, config["num_epochs"])
-  evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric)
-
-  writer.close()
+    }
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    train_loader, val_loader, test_loader = load_data(config["file_path"], config["batch_size"], config["train_percent"], config["val_percent"])
+    model = CustomResNet18(num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
+    freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"])
+    
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config["learning_rate"])
+    
+    precision_metric = MultilabelPrecision(num_labels= config["num_classes"], average='macro').to(device)
+    recall_metric = MultilabelRecall(num_labels= config["num_classes"], average='macro').to(device)
+    f1_metric = MultilabelF1Score(num_labels= config["num_classes"], average='macro').to(device)
+    
+    train_model(train_loader, val_loader, model, criterion, optimizer, config["num_epochs"])
+    evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric)
+    writer.close()
 
 

@@ -14,6 +14,8 @@ import io
 import ast
 import torch
 import pickle
+import logging
+import itertools
 import numpy as np
 from PIL import Image
 
@@ -26,6 +28,30 @@ from torch.utils.data import random_split, DataLoader, TensorDataset
 
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.classification import MultilabelPrecision, MultilabelRecall, MultilabelF1Score
+
+#log_directory = '/content/drive/My Drive/MLOPs Project'
+#log_filename = 'logs_model.log'
+log_file_path = 'logs_model.log'
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
+
+file_handler = logging.FileHandler(log_file_path)
+file_handler.setLevel(logging.DEBUG)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+logger.info("Logging configuration is set. Logs will be saved to: {}".format(log_file_path))
+
+writer = SummaryWriter("runs/CustomResNet18_experiment")
 
 """# functions"""
 
@@ -123,8 +149,6 @@ class CustomResNet18(nn.Module):
         #print("Output shape before returning:", x.shape)
 
         return x
-
-writer = SummaryWriter("runs/CustomResNet18_experiment")
 
 def freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"]):
     for name, param in model.named_parameters():
@@ -236,20 +260,7 @@ def evaluate_model(test_loader, model, criterion, precision_metric, recall_metri
     print(f'Test Accuracy: {test_accuracy:.2f}%')
     print(f'Test Precision: {precision:.4f}, Recall: {recall:.4f}, F1-score: {f1_score:.4f}')
 
-config = {
-      "file_path": "preprocessed_dummy_data.pkl",
-      "num_demographics": 3,
-      "num_classes": 15,
-      "train_percent": 0.7,
-      "val_percent": 0.1
-  }
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-import itertools
-import torch.optim as optim
-import torch.nn as nn
-
+    return test_accuracy, precision, recall, f1_score
 
 def grid_search():
     """param_grid = {
@@ -274,6 +285,9 @@ def grid_search():
     for params in all_combinations:
         num_epochs, batch_size, learning_rate, demographics_fc_size = params
 
+        logging.info(f"Starting training with params: epochs={num_epochs}, batch_size={batch_size}, "
+                     f"learning_rate={learning_rate}, demographics_fc_size={demographics_fc_size}")
+
         print(f"Training with params: {params}")
 
         train_loader, val_loader, test_loader = load_data(
@@ -288,11 +302,15 @@ def grid_search():
 
         val_accuracy = train_model(train_loader, val_loader, model, criterion, optimizer, num_epochs)
 
+        logging.info(f"Validation Accuracy: {val_accuracy:.4f} for params: epochs={num_epochs}, "
+                     f"batch_size={batch_size}, learning_rate={learning_rate}, demographics_fc_size={demographics_fc_size}")
+
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
             best_params = params
 
     print(f"Best validation accuracy: {best_val_accuracy} with parameters: {best_params}")
+    logging.info(f"Best validation accuracy: {best_val_accuracy:.4f} with parameters: {best_params}")
 
     with open("best_params.txt", "w") as f:
       f.write(f"Best validation accuracy: {best_val_accuracy}\n")
@@ -300,11 +318,21 @@ def grid_search():
 
     return best_params
 
-best_params= grid_search()
-
 if __name__ == "__main__":
 
+  config = {
+      "file_path": "preprocessed_dummy_data.pkl",
+      "num_demographics": 3,
+      "num_classes": 15,
+      "train_percent": 0.7,
+      "val_percent": 0.1
+  }
+
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+  logging.info("Starting grid search...")
+  best_params= grid_search()
+
+  logging.info("Training final model with best parameters...")
   train_loader, val_loader, test_loader = load_data(config["file_path"], best_params[1], config["train_percent"], config["val_percent"])
 
   model = CustomResNet18(best_params[3], num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
@@ -321,10 +349,13 @@ if __name__ == "__main__":
   recall_metric = MultilabelRecall(num_labels= config["num_classes"], average='macro').to(device)
   f1_metric = MultilabelF1Score(num_labels= config["num_classes"], average='macro').to(device)
 
-  train_model(train_loader, val_loader, model, criterion, optimizer, best_params[0])
+  best_val_accuracy= train_model(train_loader, val_loader, model, criterion, optimizer, best_params[0])
+  logging.info(f"Best validation accuracy after retraining the with best params: {best_val_accuracy:.4f}")
   torch.save(model.state_dict(), "final_model.pth")
 
-  evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric)
+  logging.info("Final model saved as final_model.pth")
+
+  test_accuracy, precision, recall, f1_score= evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric)
 
   writer.close()
 

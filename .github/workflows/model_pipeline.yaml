@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - dhananjay_model
-  pull_reuqest:
+  pull_request:
     branches:
       - dhananjay_model
   workflow_dispatch:
@@ -45,6 +45,14 @@ jobs:
       - name: Run Hello World
         run: |
           docker run --rm $REGISTRY/$IMAGE_NAME:latest
+
+      - name: Notify on success
+        if: success()
+        run: echo "Unit tests passed successfully"
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "Unit tests failed"
 
       # - name: Set up Python
       #   uses: actions/setup-python@v2

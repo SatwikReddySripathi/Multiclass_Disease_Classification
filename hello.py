@@ -1,5 +1,3 @@
-# hello.py
-!pip install torchmetrics
 import io
 import ast
 import torch

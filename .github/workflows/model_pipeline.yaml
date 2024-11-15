@@ -23,7 +23,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-    - name: Clean up Docker to free space
+      - name: Clean up Docker to free space
       run: docker system prune -af --volumes
 
       # Step 2: Set up Docker Buildx

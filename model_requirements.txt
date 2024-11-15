@@ -2,8 +2,6 @@ scikit-learn
 scipy
 pandas
 numpy
-opencv-python-headless
-tqdm
 tensorflow
 google-cloud-storage
 pyyaml

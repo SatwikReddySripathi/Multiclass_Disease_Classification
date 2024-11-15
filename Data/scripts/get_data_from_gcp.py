@@ -119,9 +119,9 @@ def download_and_compress_images(md5_image_data, output_pickle_file):
             image = Image.open(io.BytesIO(image_bytes))
 
             # Converting RGBA to RGB if necessary
-            if image.mode == 'RGBA':
-                image = image.convert('RGB')
-                print(f"Converted {image_index} from RGBA to RGB for JPEG compatibility.")
+            if image.mode in ['RGB','RGBA']:
+                image = image.convert('L')
+                print(f"Converted {image_index}  to L for JPEG compatibility.")
             
             # Compressing the image, adjusting the quality and rewinding the buffer
             compressed_image = io.BytesIO()

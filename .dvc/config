@@ -1,4 +1,7 @@
 [core]
     remote = gs_remote
+[cache]
+    dir = /Users/saidheerajmalkar/Desktop/data
+    type = copy
 ['remote "gs_remote"']
     url = gs://nih-dataset-mlops

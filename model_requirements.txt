@@ -9,3 +9,4 @@ torch
 tensorflow-data-validation
 torchmetrics
 Pillow
+torchvision

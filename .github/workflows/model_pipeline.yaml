@@ -1,12 +1,13 @@
+
 name: Model Pipeline v1
 
 on:
   push:
     branches:
-      - dhananjay_model
+      - dheeraj_model
   pull_request:
     branches:
-      - dhananjay_model
+      - dheeraj_model
   workflow_dispatch:
 
 env:

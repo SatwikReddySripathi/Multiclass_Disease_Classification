@@ -3,7 +3,6 @@ torchvision
 torchmetrics
 PILLOW
 numpy
-ast
 io
 pickle
 tensorboard

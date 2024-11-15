@@ -5,6 +5,7 @@ numpy
 tensorflow
 google-cloud-storage
 pyyaml
+torch
 tensorflow-data-validation
 torchmetrics
 ray[tune]

@@ -9,5 +9,3 @@ torch
 tensorflow-data-validation
 torchmetrics
 Pillow
-pickle
-

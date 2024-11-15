@@ -228,7 +228,6 @@ def evaluate_model(test_loader, model, criterion, precision_metric, recall_metri
 
 if __name__ == "__main__":
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-file_path = 
   config = {
       "file_path": os.path.join(PROJECT_DIR, "model", "preprocessed_dummy_data.pkl")
       "batch_size": 32,

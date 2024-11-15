@@ -36,7 +36,7 @@ jobs:
       # Step 4: Install dependencies
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements1.txt
 
       # Step 5: Build and Push Docker Image
       - name: Build and Push Docker Image

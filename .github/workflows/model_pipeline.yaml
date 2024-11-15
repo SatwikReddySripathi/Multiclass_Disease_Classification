@@ -38,7 +38,7 @@ jobs:
       # Step 4: Build and Push Docker Image
       - name: Build and Push Docker Image
         run: |
-          docker build -f DockerFiletwo -t $REGISTRY/$IMAGE_NAME:latest .
+          docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
           docker push $REGISTRY/$IMAGE_NAME:latest
 
       # Step 5: Run Model with Raytuner from Docker Image

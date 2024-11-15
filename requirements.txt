@@ -17,3 +17,5 @@ imblearn
 kneed
 tensorflow-data-validation
 IPython
+torchmetrics
+ray[tune]

@@ -42,7 +42,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --cache-dir=/tmp/pip-cache -r requirements.txt
+          pip install --cache-dir=/tmp/pip-cache -r model_requirements.txt
 
       # Step 5: Build and Push Docker Image
       - name: Build and Push Docker Image

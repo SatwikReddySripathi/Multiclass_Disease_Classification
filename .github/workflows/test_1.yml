@@ -42,6 +42,6 @@ jobs:
           docker push $REGISTRY/$IMAGE_NAME:latest
 
       # Step 5: Run Hello World from Docker Image
-      - name: Run Hello World
+      - name: Run py file
         run: |
           docker run --rm $REGISTRY/$IMAGE_NAME:latest

@@ -1,7 +1,6 @@
 torch
 torchvision
 torchmetrics
-PILLOW
+Pillow
 numpy
-pickle
 tensorboard

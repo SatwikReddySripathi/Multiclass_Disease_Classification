@@ -1,0 +1,10 @@
+scikit-learn
+scipy
+pandas
+numpy
+tensorflow
+google-cloud-storage
+pyyaml
+tensorflow-data-validation
+torchmetrics
+ray[tune]

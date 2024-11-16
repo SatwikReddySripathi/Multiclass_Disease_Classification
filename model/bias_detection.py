@@ -56,7 +56,24 @@ def load_pickle_to_df(file_path):
         "image": [torch.tensor(np.array(Image.open(io.BytesIO(data[key]['image_data'])).convert('L')), dtype=torch.float32) for key in data]
     })
     return df
-
+# Step 3: Preprocess the DataFrame
+def preprocess_df(df):
+    # Convert one-hot encoded gender into two separate columns: gender_male and gender_female
+    def decode_gender(gender_array):
+        male = 1.0 if gender_array[0] == 1.0 else 0.0
+        female = 1.0 if gender_array[1] == 1.0 else 0.0
+        return male, female
+    
+    df[['gender_male', 'gender_female']] = pd.DataFrame(df['gender'].apply(decode_gender).tolist(), index=df.index)
+    
+    # Create demographics feature with 3 columns: [age, gender_male, gender_female]
+    df['demographics'] = df.apply(lambda row: [row['age'], row['gender_male'], row['gender_female']], axis=1)
+    
+    # Use standardized age values to create bins
+    standardized_age_bins = [-float('inf'), -1, 0, 1, float('inf')]
+    age_labels_standardized = ['Younger', 'Middle-Aged', 'Older', 'Senior']
+    df['age_group_standardized'] = pd.cut(df['age'], bins=standardized_age_bins, labels=age_labels_standardized)
+    return df
 
 # Step 4: Evaluate the Model on Demographic Slices
 def evaluate_on_slices(df, model, batch_size=32):

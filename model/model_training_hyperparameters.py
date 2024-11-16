@@ -319,8 +319,8 @@ if __name__ == "__main__":
   evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric)
 
   writer.close()
-%load_ext tensorboard
-%tensorboard --logdir runs
+#%load_ext tensorboard
+#%tensorboard --logdir runs
 # functions
 def load_data(original_data_pickle, batch_size, train_percent, val_percent, target_size=(224, 224)):
     images = []

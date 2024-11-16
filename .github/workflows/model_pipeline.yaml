@@ -14,7 +14,7 @@ env:
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}          # Your GCP Service Account Key
   IMAGE_NAME: "ml-model-image"                    # Docker image name
   REGISTRY: "us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models"
-  GCS_BUCKET: "nih-dataset-mlops"                 # Your GCS bucket name
+  GCS_BUCKET: "nih-dataset-mlops"                 #  GCS bucket name
 
 jobs:
   model_pipeline:

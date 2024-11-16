@@ -58,7 +58,6 @@ def load_pickle_to_df(file_path):
     return df
 # Step 3: Preprocess the DataFrame
 def preprocess_df(df):
-    # Convert one-hot encoded gender into two separate columns: gender_male and gender_female
     def decode_gender(gender_array):
         male = 1.0 if gender_array[0] == 1.0 else 0.0
         female = 1.0 if gender_array[1] == 1.0 else 0.0

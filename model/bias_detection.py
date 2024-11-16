@@ -128,7 +128,36 @@ def evaluate_on_slices(df, model, batch_size=32):
 
     results_df = pd.DataFrame(results)
     return results_df
-
+    
+# Step 5: Detect Bias in Model Performance
+def check_bias(results_df):
+    """
+    Check for bias based on accuracy values across slices.
+    
+    Parameters:
+    - results_df (DataFrame): DataFrame containing evaluation metrics for each slice.
+    
+    Returns:
+    - str: A message indicating whether the model is biased or not.
+    """
+    # Extract the accuracy values for each slice
+    accuracies = results_df['Accuracy'].tolist()
+    
+    # Calculate the maximum and minimum accuracy
+    max_accuracy = max(accuracies)
+    min_accuracy = min(accuracies)
+    
+    # Calculate the range of accuracy
+    accuracy_range = max_accuracy - min_accuracy
+    
+    # Determine if the model is biased
+    if accuracy_range < 0.2:  # If range is less than 20%, consider it unbiased
+        return "No significant bias detected. All slices have similar accuracy."
+    else:
+        # Find slices with the maximum accuracy
+        biased_slices = results_df[results_df['Accuracy'] == max_accuracy][['Gender', 'Age Group']].values.tolist()
+        biased_slices_str = [f"{gender} - {age_group}" for gender, age_group in biased_slices]
+        return f"Bias detected! Model is biased towards slices with higher accuracy. Biased towards: {', '.join(biased_slices_str)}"
 
 # Step 6: Main Function
 def main():

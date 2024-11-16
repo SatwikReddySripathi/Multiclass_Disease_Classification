@@ -183,8 +183,8 @@ def main():
     print(overall_metrics)
     
     # Detect bias
-    st= check_bias(results_df)
-    print(st)
+    outcome= check_bias(results_df)
+    print(outcome)
 
 if __name__ == "__main__":
     main()

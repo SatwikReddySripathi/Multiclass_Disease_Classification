@@ -95,11 +95,10 @@ This is the basic Project Flow and this will be updated after the final system a
 │   │   ├── anomaly_detection.py # this file uses the schema and other metrics to detect the anomalies
 │   │   ├── preprocessing.py # this file executes augmentation to overcome class imbalance and then perform pre-processing steps
 ├── logs/scheduler
-│   ├── model.py              # Defines the model architecture for training
-│   ├── train.py              # Script for training the machine learning model
+├── model
+│   ├── model_with_grid_search.py # Defines the model architecture for training, training process, validation process and best model picking
+│   ├── bias_detection.py      # Script for bias detection
 │   ├── evaluate.py           # Script for evaluating the model's performance
-│   ├── predict.py            # Script for making predictions using the trained model
-│   ├── requirements.txt      # Python dependencies required for the backend
 ├── .dvcignore                 # Specifies files/folders that should be ignored by DVC
 ├── .gitignore                 # Specifies files/folders that should be ignored by Git
 ├── dockerfile                 # Dockerfile to build the Docker image for the main application

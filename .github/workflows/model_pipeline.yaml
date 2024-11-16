@@ -1,5 +1,4 @@
-
-name: Model Pipeline v1
+name: Model Training and Storage Pipeline
 
 on:
   push:
@@ -11,22 +10,23 @@ on:
   workflow_dispatch:
 
 env:
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }} # Your GCP Project ID
-  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }} # The service account key stored as a secret
-  IMAGE_NAME: "hello-world-image"
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}  # Your GCP Project ID
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}          # Your GCP Service Account Key
+  IMAGE_NAME: "ml-model-image"                    # Docker image name
   REGISTRY: "us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models"
+  GCS_BUCKET: "nih-dataset-mlops"                 # Your GCS bucket name
 
 jobs:
   model_pipeline:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
+      # Step 1: Checkout the code from the repository
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      # Step 2: Clean docker image
-      - name: Clean up Docker to free space
+      # Step 2: Clean up Docker resources to free up space
+      - name: Clean up Docker
         run: docker system prune -af --volumes
 
       # Step 3: Set up Docker Buildx
@@ -47,80 +47,29 @@ jobs:
           docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
           docker push $REGISTRY/$IMAGE_NAME:latest
 
-      # Step 6: Run Model with Raytuner from Docker Image
-      - name: Run Model development file
+      # Step 6: Run Model Training Script and Save Model
+      - name: Run Model Training Script
         run: |
-          docker run --rm $REGISTRY/$IMAGE_NAME:latest python model/model_development_refined.py
+          docker run --rm -v $(pwd):/app $REGISTRY/$IMAGE_NAME:latest python model_training_hyperparameters.py
 
-      - name: Notify on success
+      # Step 7: Authenticate with GCP
+      - name: Authenticate with GCP
+        run: |
+          echo $GCP_SA_KEY | base64 --decode > gcp-key.json
+          gcloud auth activate-service-account --key-file=gcp-key.json
+          gcloud config set project $GCP_PROJECT_ID
+
+      # Step 8: Push Model File to GCS Bucket
+      - name: Upload Model to GCS
+        run: |
+          gsutil cp model.pkl gs://$GCS_BUCKET/models/model-$(date +%Y%m%d%H%M%S).pkl
+
+      # Step 9: Notify on Success
+      - name: Notify on Success
         if: success()
-        run: echo "Unit tests passed successfully"
+        run: echo "Model training and storage completed successfully."
 
-      - name: Notify on failure
+      # Step 10: Notify on Failure
+      - name: Notify on Failure
         if: failure()
-        run: echo "Unit tests failed"
-
-      # - name: Set up Python
-      #   uses: actions/setup-python@v2
-      #   with:
-      #     python-version: "3.8"
-
-      # - name: Install Dependencies
-      #   run: |
-      #     python -m pip install --upgrade pip
-      #     pip install -r requirements.txt
-
-      # - name: Run Model Training Script
-      #   env:
-      #     GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-      #   run: |
-      #     python train_model.py
-
-      # - name: Validate Model
-      #   run: |
-      #     python validate_model.py
-
-      # - name: Check Validation Results
-      #   run: |
-      #     ACCURACY=$(jq .accuracy validation_metrics.json)
-      #     if (( $(echo "$ACCURACY < 0.85" | bc -l) )); then
-      #       echo "Model validation failed!"
-      #       exit 1
-      #     fi
-
-      # - name: Run Bias Detection
-      #   run: |
-      #     python detect_bias.py
-
-      # - name: Check Bias Results
-      #   run: |
-      #     BIAS=$(jq .bias_score bias_metrics.json)
-      #     if (( $(echo "$BIAS > 0.2" | bc -l) )); then
-      #       echo "Significant bias detected!"
-      #       exit 1
-      #     fi
-
-      # - name: Push Model to Artifact Registry
-      #   run: |
-      #     gcloud auth activate-service-account --key-file=$GCP_CREDENTIALS
-      #     gsutil cp model.pkl gs://my-model-bucket/models/model-$(date +%Y%m%d%H%M%S).pkl
-
-      # - name: Notify on Slack
-      #   uses: slackapi/slack-github-action@v1.23
-      #   with:
-      #     payload: |
-      #       {
-      #         "channel": "#mlopsgrp10",
-      #         "text": "Model training pipeline completed with status ${{ job.status }}."
-      #       }
-      #   env:
-      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-
-      # - name: Compare with Previous Model
-      #   run: |
-      #     python compare_models.py
-
-      # - name: Rollback if New Model is Worse
-      #   if: failure()
-      #   run: |
-      #     gsutil cp gs://my-model-bucket/models/previous_model.pkl model.pkl
+        run: echo "Model training or storage failed."

@@ -25,6 +25,9 @@ This project is designed to develop, deploy, and maintain a machine learning mod
   - [Airflow Dags](#airflow-dags)
   - [Optimized Pipeline](#optimized-pipeline)
   - [Data Versioning](#data-versioning)
+  - [Model pipeline](#model-pipeline)
+  - [CI/CD](#CI/CD)
+  - [Bias Detection](#bias-detection)
   - [Contributors](#contributors)
 
 
@@ -205,6 +208,14 @@ The Gantt chart shows an efficient timeline, with **Data Extraction** occupying 
     ```python
     dvc remote modify myremote credentialpath <GOOGLE-KEY-JSON-PATH>
     ```
+## Model Pipeline:
+In this pipeline, the processing of image classification model is executed. As a part of the pipeline, designing of the architecture, training, validation will take place. A grid search technique is also used for picking the best hyperparameters to increase the performance of the model. As an outcome of the pipeline the best model after validation and bias detection and mitigation, it is pushed to the GCP registry
+
+## CI/CD:
+Triggering of the model pipeline is ensured as a part of continuous integration and deployment using Github actions. `model_pipeline.yaml` is responsible for triggering of the pipeline and to execute each and every task in a sequence to run the model pipeline. Model pipeline is triggered whenever a new commit is pushed to the repository to continuously make sure that the model pipeline is up to the date
+
+## Bias Detection:
+Executing detection of bias is a vital step to ensure that the model is fair to every demographic feature present in the data using `bias_detection.py`. Tools like TFDV are used to slice the data into meaningful demographic slices and each slice is evaluated with the best model to ensure the model is not biased towards a feature
 
 
 ## Contributors

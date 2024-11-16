@@ -1,4 +1,3 @@
-!pip install torchmetrics
 import os
 import io
 import ast
@@ -526,8 +525,10 @@ def evaluate_model(test_loader, model, criterion, precision_metric, recall_metri
     print(f'Test Loss: {avg_test_loss:.4f}')
     print(f'Test Accuracy: {test_accuracy:.2f}%')
     print(f'Test Precision: {precision:.4f}, Recall: {recall:.4f}, F1-score: {f1_score:.4f}')
+
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 config = {
-      "file_path": "preprocessed_dummy_data.pkl",
+      "file_path": os.path.join(PROJECT_DIR, "model", "preprocessed_dummy_data.pkl"),
       "batch_size": 32,
       "num_epochs": 10,
       "learning_rate": 1e-5,

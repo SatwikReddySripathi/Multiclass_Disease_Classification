@@ -72,6 +72,8 @@ This is the basic Project Flow and this will be updated after the final system a
 ├── .dvc
 │   ├── config                # Configuration file for DVC (Data Version Control)
 │   ├── .gitignore            # Specifies files/folders related to DVC to be ignored by Git
+├── .github/workflows
+│   ├── model_pipeline.yaml                # yaml file resposible for implementing CI/CD via GitHub actions
 ├── data
 │   ├── raw_notebooks              # Directory containing preprocessed training data
 │   │   ├── Pre-processing.ipynb   #A Visual example of how the pre-processing steps are executed for a sample data
@@ -101,7 +103,9 @@ This is the basic Project Flow and this will be updated after the final system a
 │   ├── evaluate.py           # Script for evaluating the model's performance
 ├── .dvcignore                 # Specifies files/folders that should be ignored by DVC
 ├── .gitignore                 # Specifies files/folders that should be ignored by Git
-├── dockerfile                 # Dockerfile to build the Docker image for the main application
+├── dockerfile                 # Dockerfile to build the Docker image for the data pipeline
+├── Dockerfilemodel            # Dockerfile to build the Docker image for the model pipeline
+├── model_requirements.txt     # dependencies required for model pipeline
 ├── README.md                  # read me file
 ├── docker-compose.yaml        # Docker Compose file to set up and run multi-container Docker applications
 ├── requirements.txt           # Python dependencies required for running the project locally

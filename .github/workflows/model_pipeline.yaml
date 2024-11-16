@@ -50,7 +50,7 @@ jobs:
       # Step 6: Run Model Training Script and Save Model
       - name: Run Model Training Script
         run: |
-          docker run --rm -v $(pwd):/app $REGISTRY/$IMAGE_NAME:latest python model_training_hyperparameters.py
+          docker run --rm -v $(pwd):/app $REGISTRY/$IMAGE_NAME:latest python model/model_training_hyperparameters.py
 
       # Step 7: Authenticate with GCP
       - name: Authenticate with GCP

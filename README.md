@@ -181,7 +181,7 @@ The `anomaly_detection.py` script is a utility within this project that performs
 ## Augmentation and Pre-processing:
 The `preprocessing.py` scripts enhances data quality and increases dataset diversity of the medical images, which will support effective model training. It handles key tasks like loading, resizing, grayscale conversion, and applying CLAHE (Contrast Limited Adaptive Histogram Equalization) to improve contrast. These steps enhance image clarity, making them more suitable for model interpretation, especially critical in medical imaging. An augmentation generator also applies transformations like rotations and zooms, expanding the dataset and helping the model generalize better.
 
-## Data Piepline:
+## Data Pipeline:
 This is our data pipeline which includes key-functioning components:
 ![data_pipeline](assets/data_pipeline.PNG)
 

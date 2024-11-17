@@ -4,10 +4,10 @@ name: Model Pipeline v1
 on:
   push:
     branches:
-      - dheeraj_model
+      - main_model
   pull_request:
     branches:
-      - dheeraj_model
+      - main_model
   workflow_dispatch:
 
 env:

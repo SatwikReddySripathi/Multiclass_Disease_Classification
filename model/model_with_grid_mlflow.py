@@ -276,7 +276,7 @@ def grid_search():
     best_model = None
 
     all_combinations = list(itertools.product(*param_grid.values()))
-    mlflow.set_tracking_uri("http://mlflow:5000")
+    mlflow.set_tracking_uri("http://localhost:5000")  
     mlflow.set_experiment("Grid Search Experiment")
 
     for params in all_combinations:

@@ -287,7 +287,7 @@ def grid_search():
     best_model = None
 
     all_combinations = list(itertools.product(*param_grid.values()))
-
+    mlflow.set_tracking_uri("http://mlflow:5000")
     mlflow.set_experiment("Grid Search Experiment")
 
     for params in all_combinations:
@@ -386,4 +386,4 @@ print(best_model)
 # %load_ext tensorboard
 # %tensorboard --logdir runs
 
-!mlflow ui --host 0.0.0.0 --port 5000
+#!mlflow ui --host 0.0.0.0 --port 5000

@@ -12,8 +12,7 @@ RUN pip install --no-cache-dir -r /model_requirements.txt
 WORKDIR /app
 COPY model/ model/
 
-# Set environment variables for MLflow
-ENV MLFLOW_TRACKING_URI=http://localhost:5000
+
 
 # Run as the main entry point to be overridden by each GitHub Actions step
 CMD ["python", "model/model_with_grid_mlflow.py"]

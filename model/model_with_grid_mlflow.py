@@ -197,8 +197,11 @@ def grid_search():
                 best_model = model
 
     if best_model is not None:
-        torch.save(best_model.state_dict(), "/app/model_output/best_model.pth")
-        print(f"Model saved at /app/model_output/best_model.pth with accuracy: {best_val_accuracy}%")
+        output_dir = "/app/model_output"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
+        print(f"Model saved at {output_dir}/best_model.pth with accuracy: {best_val_accuracy}%")
 
 if __name__ == "__main__":
     PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

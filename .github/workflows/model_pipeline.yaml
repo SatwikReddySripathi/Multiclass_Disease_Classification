@@ -54,24 +54,30 @@ jobs:
           docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
           echo "Pushing image to Artifact Registry..."
           docker push $REGISTRY/$IMAGE_NAME:latest
-
+          
       - name: Run Model Training Script
         run: |
           echo "Starting model training..."
           docker run --rm \
-            -v $(pwd):/app \
-            -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
-            $REGISTRY/$IMAGE_NAME:latest \
-            python model/model_with_grid_mlflow.py
+          -v $(pwd):/app \
+          -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
+          $REGISTRY/$IMAGE_NAME:latest \
+          python model/model_with_grid_mlflow.py
           echo "Model training completed."
 
       - name: Upload Model to GCS
         run: |
           echo "Uploading model to GCS..."
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          gsutil cp /app/model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pth
-          gsutil cp /app/model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-latest.pth
-          echo "Model uploaded successfully."
+          if [ -f ./model_output/best_model.pth ]; then
+            gsutil cp ./model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pth
+            gsutil cp ./model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-latest.pth
+            echo "Model uploaded successfully."
+          else
+            echo "Error: Model file not found at ./model_output/best_model.pth"
+            exit 1
+          fi
+
 
       - name: Notify on Success
         if: success()

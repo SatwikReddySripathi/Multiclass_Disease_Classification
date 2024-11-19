@@ -329,9 +329,10 @@ def grid_search():
     return best_params
 
 if __name__ == "__main__":
-
+    
+  PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
   config = {
-    "file_path": "preprocessed_dummy_data.pkl",
+    "file_path": os.path.join(PROJECT_DIR, "model", "preprocessed_dummy_data.pkl") ,
     "num_demographics": 3,
     "num_classes": 15,
     "train_percent": 0.7,

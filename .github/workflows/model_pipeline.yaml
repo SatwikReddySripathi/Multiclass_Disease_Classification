@@ -32,12 +32,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Step to decode the Base64-encoded GCP service account key
-     # - name: Decode GCP Service Account Key
-      #  run: |
-       #   echo "${{ secrets.GCP_SA_KEY }}" | base64 --decode > gcp-key.json
-
-      # Authenticate with GCP using the decoded key
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
@@ -53,12 +47,11 @@ jobs:
 
       - name: Create Docker Network
         run: docker network create mlflow-network
-      
 
       - name: Build and Push Docker Image
         run: |
           echo "Building Docker image..."
-          docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
+          docker build -f updated_Dockerfile -t $REGISTRY/$IMAGE_NAME:latest .
           echo "Pushing image to Artifact Registry..."
           docker push $REGISTRY/$IMAGE_NAME:latest
 
@@ -76,8 +69,8 @@ jobs:
         run: |
           echo "Uploading model to GCS..."
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          gsutil cp model.pkl gs://$GCS_BUCKET/models/model-$TIMESTAMP.pkl
-          gsutil cp model.pkl gs://$GCS_BUCKET/models/model-latest.pkl
+          gsutil cp /app/model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pth
+          gsutil cp /app/model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-latest.pth
           echo "Model uploaded successfully."
 
       - name: Notify on Success
@@ -100,7 +93,6 @@ jobs:
         if: always()
         run: |
           echo "Performing cleanup..."
-          rm -f model.pkl
-          rm -f gcp-key.json
+          rm -f model_output/best_model.pth
           docker system prune -af --volumes
           echo "Cleanup completed."

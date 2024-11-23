@@ -57,7 +57,7 @@ def list_blobs(bucket_name):
 
 def extracting_data_from_gcp(bucket_name):
 
-    md5_hashes = find_md5_hashes(PROJECT_DIR)
+    md5_hashes = find_md5_hashes(PROJECT_DIR2)
 
     # Print all extracted MD5 hashes
     print("Extracted MD5 hashes:", md5_hashes)    

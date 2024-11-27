@@ -19,11 +19,5 @@ COPY model/ model/
 # Create a directory to save the model
 RUN mkdir -p /app/model_output
 
-# Copy GCP credentials (optional; use if embedding credentials into the image)
-COPY gcp-key.json /app/gcp-key.json
-
-# Set environment variable for GCP credentials (if included in the image)
-ENV GOOGLE_APPLICATION_CREDENTIALS="/app/gcp-key.json"
-
 # Entry point for running the training script
 CMD ["python", "model/final_model.py"]

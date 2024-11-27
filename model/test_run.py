@@ -46,6 +46,9 @@ writer = SummaryWriter("runs/CustomResNet18_experiment")
 def load_data_from_gcs(bucket_name, file_name, batch_size, train_percent, val_percent, target_size=(224, 224)):
     """Load pre-processed data from GCS and prepare DataLoaders."""
     # Initialize GCS client and fetch the file
+    credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not credentials_path or not os.path.exists(credentials_path):
+        raise FileNotFoundError(f"Google Cloud credentials file not found at {credentials_path}")
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(file_name)

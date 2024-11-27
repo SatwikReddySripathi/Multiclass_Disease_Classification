@@ -9,7 +9,6 @@ COPY model_requirements.txt .
 RUN pip install --no-cache-dir -r /model_requirements.txt
 
 RUN mkdir -p /app
-
 # Set the working directory
 WORKDIR /app
 

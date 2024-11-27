@@ -61,7 +61,7 @@ jobs:
         run: |
           echo "Starting model training..."
           docker run --rm \
-          -v $(pwd)/app:/app \
+          -v $(pwd):/app \
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           $REGISTRY/$IMAGE_NAME:latest \
           python model/final_model.py

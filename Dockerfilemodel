@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy over the model requirements file and install dependencies
 COPY model_requirements.txt .
-RUN pip install --no-cache-dir -r model_requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r model_requirements.txt
 
 # Install google-cloud-storage library for GCS streaming
 RUN pip install --no-cache-dir google-cloud-storage

@@ -48,6 +48,7 @@ jobs:
       - name: Create Temporary GCP Key File
         run: |
           mkdir -p app
+          cp -r model app/
           echo "${{ secrets.GCP_SA_KEY }}" > app/gcp-key.json
 
       - name: Build and Push Docker Image
@@ -61,7 +62,7 @@ jobs:
         run: |
           echo "Starting model training..."
           docker run --rm \
-          -v $(pwd):/app \
+          -v $(pwd)/app:/app \
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           $REGISTRY/$IMAGE_NAME:latest \
           python model/final_model.py

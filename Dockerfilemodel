@@ -1,22 +1,26 @@
-
-# Python image Dockerfile
+# Use Python 3.8 as the base image
 FROM python:3.8
 
-# Install dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Install system-level dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy over the model requirements and install
+# Copy over the model requirements file and install dependencies
 COPY model_requirements.txt .
-RUN pip install --no-cache-dir -r /model_requirements.txt
+RUN pip install --no-cache-dir -r model_requirements.txt
 
-# Set the working directory
+# Install google-cloud-storage library for GCS streaming
+RUN pip install --no-cache-dir google-cloud-storage
+
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy your model training script and other necessary files
+# Copy the model directory and other necessary files into the container
 COPY model/ model/
 
-# Create a directory to save the model
+# Create a directory for model outputs
 RUN mkdir -p /app/model_output
 
-# Entry point for running the training script
-CMD ["python", "model/model_with_grid_mlflow.py"]
+# Set the entry point to run the model training script
+CMD ["python", "model/test_run.py"]

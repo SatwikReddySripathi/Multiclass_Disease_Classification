@@ -19,7 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.classification import MultilabelPrecision, MultilabelRecall, MultilabelF1Score
 
 from google.cloud import storage
-
+import os
 # Logging setup
 log_file_path = 'logs_model.log'
 logger = logging.getLogger()
@@ -39,6 +39,7 @@ logger.addHandler(console_handler)
 
 # TensorBoard writer setup
 writer = SummaryWriter("runs/CustomResNet18_experiment")
+#os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/content/black-resource-440218-c3-5c0b7f31ce1f.json'
 
 # Load data from GCP bucket
 def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, val_percent, target_size=(224, 224)):
@@ -192,7 +193,7 @@ def grid_search():
 
             train_loader, val_loader, test_loader = load_data_from_gcp(
                 bucket_name="nih-dataset-mlops",
-                file_path="Data_preproecssing_files/preprocessed_data.pkl",
+                file_path="Data_Preprocessing_files/preprocessed_data .pkl",
                 batch_size=batch_size,
                 train_percent=config["train_percent"],
                 val_percent=config["val_percent"]
@@ -219,7 +220,7 @@ def grid_search():
 
 # Main script
 if __name__ == "__main__":
-    PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#    PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     config = {
         "num_demographics": 3,
         "num_classes": 15,
@@ -229,4 +230,4 @@ if __name__ == "__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info("Starting grid search...")
-    grid_search()
+    grid_search() 

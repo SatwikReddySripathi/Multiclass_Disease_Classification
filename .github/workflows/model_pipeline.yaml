@@ -48,18 +48,22 @@ jobs:
       - name: Create Docker Network
         run: docker network create mlflow-network
 
+      - name: Save GCP credentials
+        run: echo "${{ secrets.GCP_SA_KEY }}" > /app/gcp-key.json
+
       - name: Build and Push Docker Image
         run: |
           echo "Building Docker image..."
           docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
           echo "Pushing image to Artifact Registry..."
           docker push $REGISTRY/$IMAGE_NAME:latest
-          
+
       - name: Run Model Training Script
         run: |
           echo "Starting model training..."
           docker run --rm \
-          -v $(pwd):/app \
+          -v $(pwd):/app \  # Mount project directory
+          -v /app/gcp-key.json:/app/gcp-key.json \  # Mount credentials
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           $REGISTRY/$IMAGE_NAME:latest \
           python model/final_model.py
@@ -77,7 +81,6 @@ jobs:
             echo "Error: Model file not found at ./model_output/best_model.pth"
             exit 1
           fi
-
 
       - name: Notify on Success
         if: success()

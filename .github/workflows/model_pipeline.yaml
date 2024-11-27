@@ -45,8 +45,10 @@ jobs:
         run: |
           gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
 
-      - name: Create Docker Network
-        run: docker network create mlflow-network
+      - name: Create Temporary GCP Key File
+        run: |
+          mkdir -p /app
+          echo "${{ secrets.GCP_SA_KEY }}" > /app/gcp-key.json
 
       - name: Build and Push Docker Image
         run: |
@@ -55,14 +57,12 @@ jobs:
           echo "Pushing image to Artifact Registry..."
           docker push $REGISTRY/$IMAGE_NAME:latest
 
-      
-
       - name: Run Model Training Script
         run: |
           echo "Starting model training..."
           docker run --rm \
-          -v $(pwd):/app \  # Mount project directory
-          -v /app/gcp-key.json:/app/gcp-key.json \  # Mount credentials
+          -v $(pwd):/app \
+          -v /app/gcp-key.json:/app/gcp-key.json \
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           $REGISTRY/$IMAGE_NAME:latest \
           python model/final_model.py
@@ -101,6 +101,6 @@ jobs:
         if: always()
         run: |
           echo "Performing cleanup..."
-          rm -f model_output/best_model.pth
+          rm -f /app/gcp-key.json
           docker system prune -af --volumes
           echo "Cleanup completed."

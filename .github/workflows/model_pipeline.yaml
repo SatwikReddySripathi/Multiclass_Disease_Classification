@@ -48,15 +48,15 @@ jobs:
       - name: Create Docker Network
         run: docker network create mlflow-network
 
-      - name: Save GCP credentials
-        run: echo "${{ secrets.GCP_SA_KEY }}" > /app/gcp-key.json
-
       - name: Build and Push Docker Image
         run: |
           echo "Building Docker image..."
           docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
           echo "Pushing image to Artifact Registry..."
           docker push $REGISTRY/$IMAGE_NAME:latest
+
+      - name: Save GCP credentials
+        run: echo "${{ secrets.GCP_SA_KEY }}" > /app/gcp-key.json
 
       - name: Run Model Training Script
         run: |

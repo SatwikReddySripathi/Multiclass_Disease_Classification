@@ -22,5 +22,11 @@ COPY model/ model/
 # Create a directory for model outputs
 RUN mkdir -p /app/model_output
 
+# Copy the GCP credentials file into the container
+COPY gcp-key.json /app/gcp-key.json
+
+# Set an environment variable to point to the credentials file
+ENV GOOGLE_APPLICATION_CREDENTIALS="/app/gcp-key.json"
+
 # Set the entry point to run the model training script
 CMD ["python", "model/test_run.py"]

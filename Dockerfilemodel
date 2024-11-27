@@ -19,4 +19,4 @@ COPY model/ model/
 RUN mkdir -p /app/model_output
 
 # Entry point for running the training script
-CMD ["python", "model/final_model.py"]
+CMD ["python", "model/model_with_grid_mlflow.py"]

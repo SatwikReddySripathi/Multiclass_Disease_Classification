@@ -51,10 +51,20 @@ jobs:
           cp -r model app/
           echo "${{ secrets.GCP_SA_KEY }}" > app/gcp-key.json
 
-      - name: Verify App Directory
+      - name: Create Temporary GCP Key File
         run: |
-          echo "Listing contents of app directory:"
-          ls -R app           # Verify that the model directory and gcp-key.json are present
+          mkdir -p app
+          cp -r model app/
+          echo '${{ secrets.GCP_SA_KEY }}' | jq '.' > app/gcp-key.json
+          # Validate the JSON
+          cat app/gcp-key.json | jq '.'
+
+      - name: Debug GCP Key
+        run: |
+         echo "Checking GCP key file:"
+         ls -l app/gcp-key.json
+         echo "File contents:"
+         cat app/gcp-key.json | jq '.' || echo "Invalid JSON"
 
       - name: Build and Push Docker Image
         run: |

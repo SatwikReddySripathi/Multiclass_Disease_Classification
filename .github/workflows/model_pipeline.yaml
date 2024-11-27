@@ -62,7 +62,7 @@ jobs:
           -v $(pwd):/app \
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           $REGISTRY/$IMAGE_NAME:latest \
-          python model/model_with_grid_mlflow.py
+          python model/final_model.py
           echo "Model training completed."
 
       - name: Upload Model to GCS

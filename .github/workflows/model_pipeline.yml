@@ -25,6 +25,10 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
+        
+              # Write the GCP credentials to a file for use in the container
+      - name: Write GCP credentials to file
+        run: echo "${{ secrets.GCP_SA_KEY }}" > gcp-key.json
 
       - name: Set up Python Environment
         run: |

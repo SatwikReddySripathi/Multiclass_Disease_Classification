@@ -15,7 +15,8 @@ class TestPreprocessing(unittest.TestCase):
     sample= os.listdir('/content/drive/My Drive/MLOPs Project/sampled_data')[0]
     image_path = os.path.join('/content/drive/My Drive/MLOPs Project/sampled_data', sample)
 
-    processed_image = preprocess_image(image_path)
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    processed_image = preprocess_image(image)
 
     self.assertIsNotNone(processed_image)
     self.assertEqual(processed_image.shape, (224, 224))

@@ -15,3 +15,5 @@ matplotlib
 seaborn
 imblearn
 kneed
+tensorflow-data-validation
+IPython

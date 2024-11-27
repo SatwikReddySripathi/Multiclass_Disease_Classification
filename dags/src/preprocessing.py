@@ -1,20 +1,32 @@
 import os
+import io
 import cv2
+import time
 import json
 import random
+import pickle
 import logging
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from collections import Counter
 import matplotlib.pyplot as plt
+
+from PIL import Image
+from PIL import ImageOps
+from IPython.display import display
+
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-# Updated log directory to fit the Airflow container's structure
-log_directory = '/opt/airflow/logs'
-log_filename = 'data_preprocessing.log'
-log_file_path = os.path.join(log_directory, log_filename)
-
+PROJECT_DIR = '/opt/airflow'
+LOG_DIR = os.path.join(PROJECT_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(LOG_DIR, 'preprocessing.log')
+PICKLE_DIR = os.path.join(PROJECT_DIR, "Processed_Data")
+ORIGINAL_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'raw_compressed_data.pkl')
+PREPROCESSED_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'preprocessed_data.pkl')
+CONFIG_DIR = os.path.join(PROJECT_DIR, "config")
+LABEL_JSON_PATH = os.path.join(PICKLE_DIR, 'labels_to_indices.json')
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
@@ -56,58 +68,35 @@ def load_label_indices(json_path):
     return None
   
 
-def preprocess_image(image_path):
+def preprocess_image(image):
   """
   Load an image, resize it, normalize pixel values, and apply CLAHE.
   Contrast-limited adaptive histogram equalization (CLAHE) is an image processing technique that improves contrast and reduces noise. This is a domain specific
   technique I guess? resizing and normalizing can be applied to everything. But for medical images it would be benificial to add CLAHE.
   """
   try:
-    logging.info(f"Starting to preprocess image from path: {image_path}")
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    if image is None:
-      raise ValueError(f"Image at path {image_path} could not be loaded. Ensure the path is correct and the file exists.")
-    
-    logging.info(f"Image loaded from path: {image_path}")
+    # Converting the PIL image to a NumPy array if needed
+    if isinstance(image, Image.Image):
+        image = np.array(image)
+
+    # Ensuring image is in grayscale(to avoid problems with the gcp thingy)
+    if len(image.shape) == 3 and image.shape[2] == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
     image = cv2.resize(image, (224, 224))
-    image = image / 255.0  # Normalizing pixel values to [0, 1]
+
+    if image.max() <= 1.0:
+        image = (image * 255).astype('uint8')
 
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    image = clahe.apply((image * 255).astype(np.uint8)) / 255.0
+    image = clahe.apply(image)
+    image = image / 255.0
+
     return image
 
-  except cv2.error as e:
-    logging.error(f"OpenCV error while processing image {image_path}: {e}")
-    return None
-
-  except ValueError as e:
-    logging.error(f"Value error while processing image {image_path}: {e}")
-    return None
-
   except Exception as e:
-    logging.error(f"Unexpected error processing image {image_path}: {e}")
+    print(f"Error during image preprocessing: {e}")
     return None
-  
-
-def save_image(image, save_path, image_id):
-  try:
-    logging.info(f"Attempting to save image {image_id} to {save_path}")
-    os.makedirs(save_path, exist_ok=True)
-    cv2.imwrite(os.path.join(save_path, image_id), (image * 255).astype(np.uint8))
-    logging.info(f"Successfully saved image {image_id} to {save_path}")
-
-  except Exception as e:
-    logging.error(f"Error saving image {image_id} to path {save_path}: {e}")
-
-
-def display_image(image):
-  try:
-    plt.imshow(image, cmap='gray')
-    plt.axis('off')
-    plt.show()
-  except Exception as e:
-    print(f"Error displaying image: {e}")
 
 
 def augment_generator():
@@ -195,71 +184,86 @@ def apply_augmentation(image, augmentation_generator):
 
   return augmented_images
 
-def process_images(original_data_folder, preprocessed_data_folder, csv_path, label_json_path, is_training=False):
+def process_images(original_data_pickle, preprocessed_data_pickle, label_json_path, is_training=False):
   """
-  Processes images by preprocessing and optionally augmenting them. Saves preprocessed and augmented images.
+  Processes images by preprocessing and optionally augmenting them,
+  then saves all processed images into a new pickle file.
   """
   try:
     logging.info("Starting image processing.")
+
     global augmentation_generator
     augmentation_generator = augment_generator()
 
-    df = pd.read_csv(csv_path)
-    logging.info(f"Loaded CSV data from {csv_path} with {len(df)} entries.")
+    logging.info("Augmentation generator created.")
 
-    for idx, row in tqdm(df.iterrows(), total=len(df), desc="Preprocessing images"):
-      image_id = row['Image Index']
-      image_path = os.path.join(original_data_folder, image_id)
+    with open(original_data_pickle, 'rb') as f:
+      image_data = pickle.load(f)
+    logging.info(f"Loaded data from {original_data_pickle} with {len(image_data)} entries.")
 
-      image = preprocess_image(image_path)
-      if image is not None:
-        save_image(image, preprocessed_data_folder, image_id)
-        logging.info(f"Successfully preprocessed and saved image: {image_id}")
-      else:
-        logging.warning(f"Skipping image {image_id} due to preprocessing issues.")
 
     if is_training:
-      logging.info("Starting augmentation process.")
-      label_to_indices = load_label_indices(label_json_path)
+      logging.info("Loading augmented indices for training mode.")
+      with open(label_json_path, 'r') as json_file:
+        label_to_indices = json.load(json_file)
+      augmented_indices = get_augmented_indices(label_to_indices, len(image_data))
+      logging.info(f"Loaded {len(augmented_indices)} augmented indices.")
 
-      if not label_to_indices:
-        logging.error(f"Label indices could not be loaded from {label_json_path}. Aborting augmentation.")
-        return
+    processed_images = {}
 
-      augmented_indices = get_augmented_indices(label_to_indices, len(df))
-      logging.info(f"Generated {len(augmented_indices)} augmented indices.")
+    for image_index, image_info in tqdm(image_data.items(), desc="Processing images"):
+      image_label = image_info['image_label']
+      image_bytes = image_info['image_data']
+      image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
 
-      for idx in tqdm(augmented_indices, desc="Augmenting images"):
-        image_id = df.iloc[idx]['Image Index']
-        image_path = os.path.join(original_data_folder, image_id)
-        raw_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+      if is_training and int(image_index) in augmented_indices:
+        augmented_images = apply_augmentation(image, augmentation_generator)
+        for aug_num, aug_image in enumerate(augmented_images):
+          aug_preprocessed_image = preprocess_image(aug_image)
 
-        if raw_image is not None:
-          augmented_images = apply_augmentation(raw_image, augmentation_generator)
-          for aug_num, aug_image in enumerate(augmented_images):
-            aug_preprocessed_image = preprocess_image(aug_image)
-            save_image(aug_preprocessed_image, preprocessed_data_folder, f'aug_{aug_num}_{image_id}')
+          if aug_preprocessed_image.max() <= 1:
+            aug_preprocessed_image = (aug_preprocessed_image * 255).astype(np.uint8)
 
-        else:
-          logging.warning(f"Skipping raw image {image_id} due to loading issues.")
+          if isinstance(aug_preprocessed_image, np.ndarray):
+            aug_preprocessed_image = Image.fromarray(aug_preprocessed_image).convert('L')
 
-    logging.info("Data preprocessing and augmentation complete.")
+          aug_image_bytes = io.BytesIO()
+          aug_preprocessed_image.save(aug_image_bytes, format='JPEG')
+          processed_images[f'aug_{aug_num}_{image_index}'] = {
+              'image_data': aug_image_bytes.getvalue(),
+              'image_label': image_label
+          }
+
+
+      preprocessed_image = preprocess_image(image)
+
+      if preprocessed_image.max() <= 1:
+        preprocessed_image = (preprocessed_image * 255).astype(np.uint8)
+
+      if isinstance(preprocessed_image, np.ndarray):
+        preprocessed_image = Image.fromarray(preprocessed_image).convert('L')
+
+      preprocessed_image_bytes = io.BytesIO()
+      preprocessed_image.save(preprocessed_image_bytes, format='JPEG')
+      processed_images[image_index] = {
+          'image_data': preprocessed_image_bytes.getvalue(),
+          'image_label': image_label
+      }
+
+    logging.info(f"Saving all processed images to {preprocessed_data_pickle}")
+
+    with open(preprocessed_data_pickle, 'wb') as f:
+      pickle.dump(processed_images, f)
+      logging.info(f"All processed images saved to {preprocessed_data_pickle}")
+
+    #files.download(preprocessed_data_pickle)
 
   except Exception as e:
-    logging.error(f"An unexpected error occurred during image processing: {e}")
-  
+    logging.error(f"An error occurred during image processing: {e}")
+
   finally:
     logging.info("Image processing completed.")
+
+def process_images_airflow():
   
-  print("Data preprocessing and augmentation complete.")
-
-
-"""
-original_data_folder = '/content/drive/My Drive/MLOPs Project/sampled_data'
-preprocessed_data_folder = '/content/drive/My Drive/MLOPs Project/preprocessed_data'
-csv_path = '/content/drive/My Drive/MLOPs Project/sampled_train_data_entry.csv'
-label_json_path = '/content/drive/My Drive/MLOPs Project/label_indices.json'
-
-process_images(original_data_folder, preprocessed_data_folder, csv_path, label_json_path)
-
-"""
+  process_images(ORIGINAL_PICKLE_FILE_PATH, PREPROCESSED_PICKLE_FILE_PATH, LABEL_JSON_PATH)

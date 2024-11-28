@@ -72,16 +72,22 @@ jobs:
           echo "Starting model training..."
           docker run --rm \
           -v $(pwd)/app:/app \
+          -v $(pwd)/model_output:/app/model_output \  # Mount model_output directory
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           $REGISTRY/$IMAGE_NAME:latest \
           python model/final_model.py
           echo "Model training completed."
 
+      - name: Verify Model Output Directory
+        run: |
+          echo "Checking contents of model_output directory:"
+          ls -R model_output    
+
       - name: Upload Model to GCS
         run: |
           echo "Uploading model to GCS..."
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          if [ -f .app/model_output/best_model.pth ]; then
+          if [ -f ./model_output/best_model.pth ]; then
             gsutil cp ./model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pth
             gsutil cp ./model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-latest.pth
             echo "Model uploaded successfully."

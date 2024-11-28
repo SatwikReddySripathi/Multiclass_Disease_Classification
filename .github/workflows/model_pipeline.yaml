@@ -82,8 +82,8 @@ jobs:
           echo "Uploading model to GCS..."
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           if [ -f ./model_output/best_model.pth ]; then
-            gsutil cp ./model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pth
-            gsutil cp ./model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-latest.pth
+            gsutil cp .app/model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pth
+            gsutil cp .app/model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-latest.pth
             echo "Model uploaded successfully."
           else
             echo "Error: Model file not found at ./model_output/best_model.pth"

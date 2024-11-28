@@ -8,9 +8,10 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 COPY model_requirements.txt .
 RUN pip install --no-cache-dir -r /model_requirements.txt
 
-RUN mkdir -p /app
+
 # Set the working directory
 WORKDIR /app
+RUN mkdir -p /app
 
 # Copy your model training script and other necessary files
 COPY model/ model/

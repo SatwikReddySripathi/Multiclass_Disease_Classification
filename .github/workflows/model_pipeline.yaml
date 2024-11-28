@@ -67,12 +67,15 @@ jobs:
           echo "Pushing image to Artifact Registry..."
           docker push $REGISTRY/$IMAGE_NAME:latest
 
+      - name: Debug Docker Image Reference
+        run: |
+          echo "Docker Image Reference: $REGISTRY/$IMAGE_NAME:latest"
+
       - name: Run Model Training Script
         run: |
           echo "Starting model training..."
           docker run --rm \
           -v $(pwd)/app:/app \
-          -v $(pwd)/model_output:/app/model_output \  # Mount model_output directory
           -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
           $REGISTRY/$IMAGE_NAME:latest \
           python model/final_model.py

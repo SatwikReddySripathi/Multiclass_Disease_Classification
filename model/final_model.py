@@ -172,7 +172,7 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, num_epoch
 # Grid search function
 def grid_search():
     param_grid = {
-        "num_epochs": [3],
+        "num_epochs": [5],
         "batch_size": [32, 64],
         "learning_rate": [1e-5, 1e-4],
         "demographics_fc_size": [64]
@@ -203,6 +203,7 @@ def grid_search():
                 val_percent=config["val_percent"]
             )
 
+            print("######################################################################")
             model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
             criterion = nn.BCEWithLogitsLoss()

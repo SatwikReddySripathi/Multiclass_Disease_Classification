@@ -192,6 +192,11 @@ def grid_search():
             mlflow.log_param("batch_size", batch_size)
             mlflow.log_param("learning_rate", learning_rate)
             mlflow.log_param("demographic_fc_size", demographic_fc_size)
+            
+            print("######################################################################")
+            model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
+            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+            criterion = nn.BCEWithLogitsLoss()            
 
             print("Splitting data")
 
@@ -203,10 +208,10 @@ def grid_search():
                 val_percent=config["val_percent"]
             )
 
-            print("######################################################################")
-            model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-            criterion = nn.BCEWithLogitsLoss()
+            #print("######################################################################")
+            #model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
+            #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+            #criterion = nn.BCEWithLogitsLoss()
 
             print("Training of the model has started")
 

@@ -172,8 +172,8 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, num_epoch
 # Grid search function
 def grid_search():
     param_grid = {
-        "num_epochs": [3],
-        "batch_size": [32, 64],
+        "num_epochs": [5],
+        "batch_size": [16, 32],
         "learning_rate": [1e-5, 1e-4],
         "demographics_fc_size": [64]
     }

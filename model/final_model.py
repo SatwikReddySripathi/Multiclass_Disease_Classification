@@ -126,9 +126,11 @@ class CustomResNet18(nn.Module):
 
 # Training function
 def train_model(train_loader, val_loader, model, criterion, optimizer, num_epochs=10):
+    logging.info("#################### Entered TRAIN MODEL ################")
     model.train()
     best_val_accuracy = 0
 
+    logging.info("#################### Entered TRAIN MODEL STEP-2 ################")
     for epoch in range(num_epochs):
         running_loss = 0.0
         for inputs, demographics, labels in train_loader:
@@ -140,9 +142,12 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, num_epoch
             optimizer.step()
             running_loss += loss.item()
 
+        logging.info("#################### Entered TRAIN MODEL STEP-3 ################")
         avg_train_loss = running_loss / len(train_loader)
+        logging.info("#################### Entered TRAIN MODEL STEP-4 ################")
         writer.add_scalar("Loss/Train", avg_train_loss, epoch)
 
+        logging.info("#################### Entered TRAIN MODEL STEP-5 ################")
         model.eval()
         val_loss = 0.0
         correct = 0
@@ -157,6 +162,7 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, num_epoch
                 correct += (predicted == labels).sum().item()
                 total += labels.numel()
 
+        logging.info("#################### Entered TRAIN MODEL STEP-6 ################")
         avg_val_loss = val_loss / len(val_loader)
         val_accuracy = 100 * correct / total
         writer.add_scalar("Loss/Validation", avg_val_loss, epoch)

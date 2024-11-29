@@ -67,18 +67,13 @@ jobs:
           python model/final_model.py
           echo "Model training completed."
 
-      - name: Capture Logs if Training Fails
-        if: failure()
-        run: |
-          echo "Model training failed. Capturing logs..."
-          cat training_logs.txt || echo "No logs available"
       
       - name: Verify Model Output
         run: |
           echo "Checking contents of model_output directory:"
           ls -l model_output
-          if [ ! -f model_output/best_model.pth ]; then
-            echo "❌ Model file best_model.pth not found"
+          if [ ! -f model_output/best_model.pt ]; then
+            echo "❌ Model file best_model.pt not found"
             exit 1
           fi
       
@@ -86,8 +81,8 @@ jobs:
         run: |
           echo "Uploading model to GCS..."
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          gsutil cp model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pth
-          gsutil cp model_output/best_model.pth gs://$GCS_BUCKET/models/best_model-latest.pth
+          gsutil cp model_output/best_model.pt gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pt
+          gsutil cp model_output/best_model.pt gs://$GCS_BUCKET/models/best_model-latest.pt
           echo "Model uploaded successfully."
       
       - name: Notify on Success

@@ -193,6 +193,8 @@ def grid_search():
             mlflow.log_param("learning_rate", learning_rate)
             mlflow.log_param("demographic_fc_size", demographic_fc_size)
 
+            print("Splitting data")
+
             train_loader, val_loader, test_loader = load_data_from_gcp(
                 bucket_name="nih-dataset-mlops",
                 file_path="Data_Preprocessing_files/preprocessed_data.pkl",
@@ -204,6 +206,8 @@ def grid_search():
             model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
             criterion = nn.BCEWithLogitsLoss()
+
+            print("Training of the model has started")
 
             val_accuracy = train_model(train_loader, val_loader, model, criterion, optimizer, num_epochs)
             mlflow.log_metric("val_accuracy", val_accuracy)
@@ -217,7 +221,8 @@ def grid_search():
         output_dir = "/app/model_output"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
+        #torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
+        torch.save(best_model, os.path.join(output_dir, "best_model.pt"))
         print(f"Model saved at {output_dir}/best_model.pth with accuracy: {best_val_accuracy}%")
 
 # Main script

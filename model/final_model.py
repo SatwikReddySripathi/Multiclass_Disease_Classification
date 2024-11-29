@@ -266,7 +266,7 @@ def grid_search():
             os.makedirs(output_dir)
         #torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
         torch.save(best_model, os.path.join(output_dir, "best_model.pt"))
-        print(f"Model saved at {output_dir}/best_model.pth with accuracy: {best_val_accuracy}%")
+        print(f"Model saved at {output_dir}/best_model.pt with accuracy: {best_val_accuracy}%")
 
 # Main script
 if __name__ == "__main__":

@@ -183,6 +183,7 @@ def grid_search():
     best_model = None
     all_combinations = list(itertools.product(*param_grid.values()))
     mlflow.set_experiment("Grid Search Experiment")
+    logging.info("Experiment is set in mlflow")
 
     for params in all_combinations:
         num_epochs, batch_size, learning_rate, demographic_fc_size = params
@@ -193,15 +194,15 @@ def grid_search():
             mlflow.log_param("learning_rate", learning_rate)
             mlflow.log_param("demographic_fc_size", demographic_fc_size)
             
-            print("######################################################################")
+            logging.info("######################################################################")
             model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
-            print("crossed one")
+            logging.info("crossed one")
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-            print("crossed two")
+            logging.info("crossed two")
             criterion = nn.BCEWithLogitsLoss()      
-            print("crossed three")
+            logging.info("crossed three")
 
-            print("Splitting data")
+            logging.info("Splitting data")
 
             train_loader, val_loader, test_loader = load_data_from_gcp(
                 bucket_name="nih-dataset-mlops",
@@ -216,7 +217,7 @@ def grid_search():
             #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
             #criterion = nn.BCEWithLogitsLoss()
 
-            print("Training of the model has started")
+            logging.info("Training of the model has started")
 
             val_accuracy = train_model(train_loader, val_loader, model, criterion, optimizer, num_epochs)
             mlflow.log_metric("val_accuracy", val_accuracy)

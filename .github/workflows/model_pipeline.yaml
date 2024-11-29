@@ -66,6 +66,12 @@ jobs:
           $REGISTRY/$IMAGE_NAME:latest \
           python model/final_model.py
           echo "Model training completed."
+
+      - name: Capture Logs if Training Fails
+        if: failure()
+        run: |
+          echo "Model training failed. Capturing logs..."
+          cat training_logs.txt || echo "No logs available"
       
       - name: Verify Model Output
         run: |

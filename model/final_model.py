@@ -195,8 +195,11 @@ def grid_search():
             
             print("######################################################################")
             model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
+            print("crossed one")
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-            criterion = nn.BCEWithLogitsLoss()            
+            print("crossed two")
+            criterion = nn.BCEWithLogitsLoss()      
+            print("crossed three")
 
             print("Splitting data")
 

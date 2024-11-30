@@ -1,91 +1,74 @@
-name: Model Training and Storage Pipeline
+name: Deploy Model to Vertex AI
+
 on:
   push:
     branches:
-      - dhanush_model
-  pull_request:
-    branches:
-      - dhanush_model
-  workflow_dispatch:
-
-env:
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-  IMAGE_NAME: "ml-model-image"
-  REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models-new"
-  GCS_BUCKET: "nih-dataset-mlops"
+      - dhanush_model  # Replace 'main' with your branch name if needed
 
 jobs:
-  model_pipeline:
+  deploy-to-vertex-ai:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-        
-              # Write the GCP credentials to a file for use in the container
-      - name: Write GCP credentials to file
-        run: echo "${{ secrets.GCP_SA_KEY }}" > gcp-key.json
+    # Step 1: Check out the repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Set up Python Environment
-        run: |
-          python -m pip install --upgrade pip
-          pip install google-cloud-storage torch torchvision torchmetrics mlflow pillow
+    # Step 2: Set up Google Cloud SDK
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        version: 'latest'
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        project_id: black-resource-440218-c3
 
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v1'
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+    # Step 3: Authenticate and configure gcloud
+    - name: Authenticate to Google Cloud
+      run: |
+        gcloud auth activate-service-account --key-file=${{ secrets.GCP_SA_KEY }}
+        gcloud config set project black-resource-440218-c3
 
-      - name: Set up Cloud SDK
-        uses: 'google-github-actions/setup-gcloud@v1'
+    # Step 4: Create a model in Vertex AI Model Registry
+    - name: Create Model Registry in Vertex AI
+      id: create-model
+      run: |
+        MODEL_NAME="gitdeploy"
+        REGION="us-east1"
+        MODEL_URI="gs://nih-dataset-mlops/Testing/model.mar"
 
-      - name: Configure Docker for GCP Artifact Registry
-        run: |
-          gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
-
-      - name: Create Docker Network
-        run: docker network create mlflow-network
-
-      - name: Build and Push Docker Image
-        run: |
-          echo "Building Docker image..."
-          docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
-          echo "Pushing image to Artifact Registry..."
-          docker push $REGISTRY/$IMAGE_NAME:latest
+        gcloud ai models upload \
+          --region=$REGION \
+          --display-name=$MODEL_NAME \
+          --artifact-uri=$MODEL_URI \
+          --container-image-uri=us-docker.pkg.dev/vertex-ai/prediction/pytorch-cpu.2-1:latest
           
-      - name: Run Model Training Script
-        run: |
-          echo "Starting model training..."
-          docker run --rm \
-          -v $(pwd):/app \
-          -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
-          $REGISTRY/$IMAGE_NAME:latest \
-          python model/test_run.py
-          echo "Model training completed."
+    # Step 5: Deploy model to Vertex AI Endpoint
+    - name: Deploy Model to Endpoint
+      run: |
+        ENDPOINT_NAME="gitdeployendpoint"
+        REGION="us-east1"
 
-      - name: Notify on Success
-        if: success()
-        run: |
-          echo "✅ Pipeline completed successfully:"
-          echo "- Model trained"
-          echo "- Docker image pushed to: $REGISTRY/$IMAGE_NAME:latest"
+        # Check if endpoint exists
+        ENDPOINT=$(gcloud ai endpoints list --region $REGION --filter="displayName=$ENDPOINT_NAME" --format="value(name)")
 
-      - name: Notify on Failure
-        if: failure()
-        run: |
-          echo "❌ Pipeline failed:"
-          echo "- Check the logs above for detailed error messages"
-          echo "- Verify GCP permissions and credentials"
-          echo "- Ensure all required services are enabled"
+        if [ -z "$ENDPOINT" ]; then
+          # Create endpoint if it doesn't exist
+          ENDPOINT=$(gcloud ai endpoints create \
+            --region $REGION \
+            --display-name=$ENDPOINT_NAME \
+            --format="value(name)")
+        fi
 
-      - name: Cleanup
-        if: always()
-        run: |
-          echo "Performing cleanup..."
-          docker system prune -af --volumes
-          echo "Cleanup completed."
+        # Deploy model to endpoint
+        gcloud ai endpoints deploy-model \
+          --region=$REGION \
+          --endpoint=$ENDPOINT \
+          --model-display-name="gitdeploy" \
+          --traffic-split=0=100 \
+          --machine-type="n1-standard-2"
+
+    # Step 6: Get Endpoint URI
+    - name: Get Endpoint URI
+      run: |
+        ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName=gitdeploy" --format="value(name)")
+        echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/$ENDPOINT"

@@ -1,9 +1,18 @@
-name: Deploy Model to Vertex AI
-
+name: Deploy model to Vertex AI
 on:
   push:
     branches:
-      - dhanush_model  # Replace 'main' with your branch name if needed
+      - dhanush_model
+  pull_request:
+    branches:
+      - dhanush_model
+  workflow_dispatch:
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+  IMAGE_NAME: "ml-model-image"
+  REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models-new"
+  GCS_BUCKET: "nih-dataset-mlops"
 
 jobs:
   deploy-to-vertex-ai:
@@ -13,20 +22,15 @@ jobs:
     # Step 1: Check out the repository
     - name: Checkout Code
       uses: actions/checkout@v3
-
-    # Step 2: Set up Google Cloud SDK
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+      
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v1'
       with:
-        version: 'latest'
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        project_id: black-resource-440218-c3
-
-    # Step 3: Authenticate and configure gcloud
-    - name: Authenticate to Google Cloud
-      run: |
-        gcloud auth activate-service-account --key-file=${{ secrets.GCP_SA_KEY }}
-        gcloud config set project black-resource-440218-c3
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+      
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v1'      
 
     # Step 4: Create a model in Vertex AI Model Registry
     - name: Create Model Registry in Vertex AI

@@ -213,8 +213,8 @@ def get_demographic_info(original_data_pickle, stats_file= STATS_FILE):
         data = pickle.load(f)
 
     for item in data.values():
-        ages.append(item['age'])
-        genders.append(item['gender'])
+        ages.append(item['Age'])
+        genders.append(item['Gender'])
 
     ages = np.array(ages)
     genders = np.array(genders).reshape(-1, 1)  # Gender should be a 2D array for OneHotEncoder
@@ -266,8 +266,8 @@ def process_images(original_data_pickle, preprocessed_data_pickle, label_json_pa
     for image_index, image_info in tqdm(image_data.items(), desc="Processing images"):
       image_label = image_info['image_label']
       image_bytes = image_info['image_data']
-      gender_raw= image_info['gender']
-      age_raw= image_info['age']
+      gender_raw= image_info['Gender']
+      age_raw= image_info['Age']
 
       age = age_scaler.transform([[age_raw]])[0][0]
       gender= gender_encoder.transform([[gender_raw]])[0] #one-hot encoding of gender

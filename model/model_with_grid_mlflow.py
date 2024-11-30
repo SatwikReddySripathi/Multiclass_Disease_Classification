@@ -60,7 +60,11 @@ writer = SummaryWriter("runs/CustomResNet18_experiment")
 
 """# functions"""
 
-def load_data(original_data_pickle, batch_size, train_percent, val_percent, target_size=(224, 224)):
+def load_data(original_data_pickle, batch_size, train_percent, val_percent, target_size=(224, 224), seed= 42):
+    
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
     images = []
     demographics = []
     labels= []

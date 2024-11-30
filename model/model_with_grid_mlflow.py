@@ -14,8 +14,10 @@ Original file is located at
 import os
 import io
 import ast
+import json
 import torch
 import pickle
+import sklearn
 import logging
 import itertools
 import numpy as np
@@ -34,9 +36,8 @@ from torch.utils.data import random_split, DataLoader, TensorDataset
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.classification import MultilabelPrecision, MultilabelRecall, MultilabelF1Score
 
-#log_directory = '/content/drive/My Drive/MLOPs Project'
-#log_filename = 'logs_model.log'
 log_file_path = 'logs_model.log'
+param_file = 'param_grid_small.json'
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
@@ -61,67 +62,65 @@ writer = SummaryWriter("runs/CustomResNet18_experiment")
 """# functions"""
 
 def load_data(original_data_pickle, batch_size, train_percent, val_percent, target_size=(224, 224), seed= 42):
-    
-    torch.manual_seed(seed)
-    np.random.seed(seed)
 
-    images = []
-    demographics = []
-    labels= []
+  torch.manual_seed(seed)
+  np.random.seed(seed)
 
-    resize_transform = transforms.Compose([
-        transforms.Resize(target_size),
-        transforms.ToTensor()
-    ])
+  images = []
+  demographics = []
+  labels= []
 
-    with open(original_data_pickle, 'rb') as f:
-        data = pickle.load(f)
+  resize_transform = transforms.Compose([
+      transforms.Resize(target_size),
+      transforms.ToTensor()
+  ])
 
-    for item in data.values():
+  with open(original_data_pickle, 'rb') as f:
+      data = pickle.load(f)
 
-      """
-      The image data we get would be in bytes. We need to open it and convert it to grey scale and then resize. Recheck it. What are we doing with resizing before then?
-      """
-      image_data = item['image_data']
-      image = Image.open(io.BytesIO(image_data)).convert('L')
-      image = resize_transform(image)  # Resizing and converting to tensor with shape (1, H, W) --> got an error without it
-
-      label= item['image_label']
-      label = ast.literal_eval(label)
-      label = np.array(label, dtype=int)
-
-      age = torch.tensor([item['age']], dtype=torch.float32)
-      gender = torch.tensor(item['gender'], dtype=torch.float32)
-
-      images.append(image)
-      demographics.append(torch.cat([age, gender]))
-      labels.append(label)
+  for item in data.values():
 
     """
-    Stacking images and demographics.
-    images Shape: (num_samples, channels, height, width)
-    demographics Shape: (num_samples, num_features)
+    The image data we get would be in bytes. We need to open it and convert it to grey scale and then resize. Recheck it. What are we doing with resizing before then?
     """
-    images = torch.stack(images)
-    demographics = torch.stack(demographics)
-    labels = torch.stack([torch.tensor(label, dtype=torch.long) for label in labels])
-    #labels = torch.tensor(labels, dtype= torch.long)
+    image_data = item['image_data']
+    image = Image.open(io.BytesIO(image_data)).convert('L')
+    image = resize_transform(image)  # Resizing and converting to tensor with shape (1, H, W) --> got an error without it
 
-    dataset = TensorDataset(images, demographics, labels)
+    label= item['image_label']
+    label = ast.literal_eval(label)
+    label = np.array(label, dtype=int)
 
-    train_size = int(train_percent * len(dataset))
-    val_size = int(val_percent * len(dataset))
-    test_size = len(dataset) - train_size - val_size
+    age = torch.tensor([item['age']], dtype=torch.float32)
+    gender = torch.tensor(item['gender'], dtype=torch.float32)
 
-    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+    images.append(image)
+    demographics.append(torch.cat([age, gender]))
+    labels.append(label)
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+  """
+  Stacking images and demographics.
+  images Shape: (num_samples, channels, height, width)
+  demographics Shape: (num_samples, num_features)
+  """
+  images = torch.stack(images)
+  demographics = torch.stack(demographics)
+  labels = torch.stack([torch.tensor(label, dtype=torch.long) for label in labels])
+  #labels = torch.tensor(labels, dtype= torch.long)
 
-    print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}, Test samples: {len(test_dataset)}")
+  dataset = TensorDataset(images, demographics, labels)
 
-    return train_loader, val_loader, test_loader
+  train_size = int(train_percent * len(dataset))
+  val_size = int(val_percent * len(dataset))
+
+  train_dataset, val_dataset = random_split(dataset, [train_size, val_size, test_size])
+
+  train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+  val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+
+  print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}")
+
+  return train_loader, val_loader
 
 class CustomResNet18(nn.Module):
     def __init__(self, demographic_fc_size, num_demographics, num_classes=15):
@@ -223,54 +222,6 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, num_epoch
     print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {avg_train_loss}, Validation Loss: {avg_val_loss}, Validation Accuracy: {val_accuracy}%")
   return best_val_accuracy
 
-def evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric, confidence= 0.3):
-    model.eval()
-    correct = 0
-    total = 0
-    test_loss = 0.0
-
-    precision_metric.reset()
-    recall_metric.reset()
-    f1_metric.reset()
-
-    with torch.no_grad():
-      for inputs, demographics, labels in test_loader:
-        inputs, demographics, labels = inputs.to(device), demographics.to(device), labels.to(device)
-        outputs = model(inputs, demographics)
-
-        test_loss += criterion(outputs, labels.float()).item()
-
-        probabilities = torch.sigmoid(outputs)
-        predicted = (probabilities >= confidence).int()
-
-        correct += (predicted == labels).sum().item()
-        total += labels.numel()
-
-        #print("predicted:", predicted)
-        #print("labels: ", labels)
-
-        precision_metric.update(predicted, labels)
-        recall_metric.update(predicted, labels)
-        f1_metric.update(predicted, labels)
-
-    test_accuracy = 100 * correct / total
-    precision = precision_metric.compute().item()
-    recall = recall_metric.compute().item()
-    f1_score = f1_metric.compute().item()
-    avg_test_loss = test_loss / len(test_loader)
-
-    writer.add_scalar("Loss/Test", avg_test_loss)
-    writer.add_scalar("Accuracy/Test", test_accuracy)
-    writer.add_scalar("Precision/Test", precision)
-    writer.add_scalar("Recall/Test", recall)
-    writer.add_scalar("F1-Score/Test", f1_score)
-
-    print(f'Test Loss: {avg_test_loss:.4f}')
-    print(f'Test Accuracy: {test_accuracy:.2f}%')
-    print(f'Test Precision: {precision:.4f}, Recall: {recall:.4f}, F1-score: {f1_score:.4f}')
-
-    return test_accuracy, precision, recall, f1_score
-
 def grid_search():
     """param_grid = {
         "num_epochs": [5, 10, 15],
@@ -279,12 +230,15 @@ def grid_search():
         "demographics_fc_size": [32, 64, 128]
     }"""
 
-    param_grid = {
+    """param_grid = {
         "num_epochs": [5],
-        "batch_size": [32, 64],
-        "learning_rate": [1e-5, 1e-4],
+        "batch_size": [32],
+        "learning_rate": [1e-5],
         "demographics_fc_size": [64]
-    }
+    }"""
+
+    with open(param_file, "r") as f:
+        param_grid = json.load(f)
 
     best_val_accuracy = 0
     best_params = None
@@ -346,7 +300,7 @@ def grid_search():
 if __name__ == "__main__":
 
   config = {
-    "file_path": "preprocessed_dummy_data.pkl",
+    "file_path": "preprocessed_data_new.pkl",
     "num_demographics": 3,
     "num_classes": 15,
     "train_percent": 0.7,
@@ -360,34 +314,10 @@ if __name__ == "__main__":
 
   print("Best parameters from grid search:", best_params)
 
-  print("Loading the best model for evaluation...")
   best_model_uri = f"runs:/{mlflow.active_run().info.run_id}/best_model"
   best_model = mlflow.pytorch.load_model(best_model_uri).to(device)
 
-  _, _, test_loader = load_data(
-      config["file_path"],
-      best_params[1],
-      config["train_percent"],
-      config["val_percent"],
-  )
-
-  precision_metric = MultilabelPrecision(num_labels= config["num_classes"], average='macro').to(device)
-  recall_metric = MultilabelRecall(num_labels= config["num_classes"], average='macro').to(device)
-  f1_metric = MultilabelF1Score(num_labels= config["num_classes"], average='macro').to(device)
-
-  criterion = nn.BCEWithLogitsLoss()
-  test_accuracy, precision, recall, f1_score= evaluate_model(test_loader, best_model, criterion, precision_metric, recall_metric, f1_metric)
-
-  print(f"Test Accuracy of the best model: {test_accuracy:.4f}")
-
   writer.close()
 
-best_model_uri = f"runs:/{mlflow.active_run().info.run_id}/best_model"
-print(best_model_uri)
-print(best_model)
-
-# Commented out IPython magic to ensure Python compatibility.
-# %load_ext tensorboard
-# %tensorboard --logdir runs
 
 !mlflow ui --host 0.0.0.0 --port 5000

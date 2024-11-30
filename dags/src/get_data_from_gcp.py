@@ -124,7 +124,7 @@ def create_final_json(json_content_dict, csv_content_dict):
             
             # Check if there's a matching label in the CSV content
             if relpath in csv_content_dict.keys():
-                image_label = csv_content_dict[relpath][0]
+                image_label = csv_content_dict[relpath][3]
                 Age = csv_content_dict[relpath][1]
                 Gender = csv_content_dict[relpath][2]
                 

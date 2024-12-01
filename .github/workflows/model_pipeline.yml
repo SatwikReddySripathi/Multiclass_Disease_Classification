@@ -77,8 +77,9 @@ jobs:
     - name: Deploy Model to Endpoint
       run: |
           echo "Deploying model $MODEL_ID to endpoint $ENDPOINT_NAME..."
-          gcloud ai endpoints deploy-model \
-            --endpoint=$ENDPOINT_NAME \
+          REGION='us-east1"
+          FULL_ENDPOINT="projects/${{ secrets.GCP_PROJECT_ID }}/locations/$REGION/endpoints/$ENDPOINT_NAME"
+          gcloud ai endpoints deploy-model $FULL_ENDPOINT \
             --region=us-east1 \
             --model=$MODEL_ID \
             --display-name=gitmodelendpoint-deployment \

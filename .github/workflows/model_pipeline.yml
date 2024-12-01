@@ -47,7 +47,7 @@ jobs:
           --artifact-uri=$MODEL_URI \
           --container-image-uri=us-docker.pkg.dev/vertex-ai/prediction/pytorch-cpu.2-1:latest
 
-        MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
+        MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name=gitmodel" --format="value(name)")
         echo"MODEL_ID=$MODEL_ID)
           
       # Step 7: Create or Reuse an Endpoint

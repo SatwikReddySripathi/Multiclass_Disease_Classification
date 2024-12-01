@@ -66,7 +66,7 @@ jobs:
             exit 1
           fi
 
-          echo "ENDPOINT_NAME=$ENDPOINT_NAME" >> $GITHUB_ENV
+          echo "ENDPOINT_NAME=$ENDPOINT_NAME" 
           echo "Retrieved or created ENDPOINT_NAME: $ENDPOINT_NAME"
 
 
@@ -75,8 +75,16 @@ jobs:
       run: |
           echo "Deploying model $MODEL_ID to endpoint $ENDPOINT_NAME..."
           REGION="us-east1"
+          MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name=gitdeploy" --format="value(name)")
+
+          if [ -z "$MODEL_ID" ]; then
+            echo "ERROR: Model with display name 'gitdeploy' not found in region $REGION. Exiting workflow."
+            exit 1
+          fi
+          
           gcloud ai endpoints deploy-model $ENDPOINT_NAME \
             --region=$REGION \
+            --model=$MODEL_ID \
             --display-name=gitdeployendpoint \
             --machine-type=n1-standard-2 \
             --traffic-split=0=100 

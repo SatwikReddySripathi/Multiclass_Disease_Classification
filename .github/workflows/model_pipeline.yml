@@ -70,13 +70,15 @@ jobs:
 
           echo "ENDPOINT_NAME=$ENDPOINT_NAME" 
           echo "Retrieved or created ENDPOINT_NAME: $ENDPOINT_NAME"
+          echo "ENDPOINT_NAME=$ENDPOINT_NAME" >> $GITHUB_ENV
 
 
       # Step 8: Deploy Model to Endpoint 
     - name: Deploy Model to Endpoint
       run: |
           echo "Deploying model $MODEL_ID to endpoint $ENDPOINT_NAME..."
-          gcloud ai endpoints deploy-model $ENDPOINT_NAME \
+          gcloud ai endpoints deploy-model \
+            --endpoint=$ENDPOINT_NAME \
             --region=us-east1 \
             --model=$MODEL_ID \
             --display-name=gitmodelendpoint-deployment \

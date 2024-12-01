@@ -37,7 +37,7 @@ jobs:
     - name: Create Model Registry in Vertex AI
       id: create-model
       run: |
-        MODEL_NAME="gitdeploy"
+        MODEL_NAME="gitmodel"
         REGION="us-east1"
         MODEL_URI="gs://nih-dataset-mlops/Testing"
 
@@ -46,6 +46,9 @@ jobs:
           --display-name=$MODEL_NAME \
           --artifact-uri=$MODEL_URI \
           --container-image-uri=us-docker.pkg.dev/vertex-ai/prediction/pytorch-cpu.2-1:latest
+
+        MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
+        echo"MODEL_ID=$MODEL_ID)
           
       # Step 7: Create or Reuse an Endpoint
     - name: Create or Reuse Endpoint
@@ -53,11 +56,11 @@ jobs:
       run: |
           echo "Checking for existing endpoint..."
           REGION="us-east1"
-          ENDPOINT_NAME=$(gcloud ai endpoints list --region=$REGION --filter="display_name=gitdeployendpoint" --format="value(name)")
+          ENDPOINT_NAME=$(gcloud ai endpoints list --region=$REGION --filter="display_name='gitmodelendpoint'" --format="value(name)")
 
           if [ -z "$ENDPOINT_NAME" ]; then
             echo "No existing endpoint found. Creating a new one..."
-            ENDPOINT_NAME=$(gcloud ai endpoints create --region=$REGION --display-name=gitdeployendpoint --format="value(name)")
+            ENDPOINT_NAME=$(gcloud ai endpoints create --region=$REGION --display-name=gitmodelendpoint --format="value(name)")
           fi
 
           if [ -z "$ENDPOINT_NAME" ]; then
@@ -73,23 +76,15 @@ jobs:
     - name: Deploy Model to Endpoint
       run: |
           echo "Deploying model $MODEL_ID to endpoint $ENDPOINT_NAME..."
-          REGION="us-east1"
-          MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name=gitdeploy" --format="value(name)")
-
-          if [ -z "$MODEL_ID" ]; then
-            echo "ERROR: Model with display name 'gitdeploy' not found in region $REGION. Exiting workflow."
-            exit 1
-          fi
-          
           gcloud ai endpoints deploy-model $ENDPOINT_NAME \
             --region=us-east1 \
             --model=$MODEL_ID \
-            --display-name=gitdeployendpoint \
+            --display-name=gitmodelendpoint-deployment \
             --machine-type=n1-standard-2 \
             --traffic-split=0=100 
 
     # Step 6: Get Endpoint URI
     - name: Get Endpoint URI
       run: |
-        ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName=gitdeployendpoint" --format="value(name)")
+        ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
         echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/$ENDPOINT"

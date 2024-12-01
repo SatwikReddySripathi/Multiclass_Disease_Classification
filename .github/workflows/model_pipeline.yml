@@ -68,7 +68,7 @@ jobs:
         gcloud ai endpoints deploy-model \
           --region=$REGION \
           --endpoint=$ENDPOINT \
-          --model-display-name="gitdeploy" \
+          --display-name="gitdeploy" \
           --traffic-split=0=100 \
           --machine-type="n1-standard-2"
 

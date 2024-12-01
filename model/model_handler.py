@@ -49,7 +49,9 @@ class MultimodalMultilabelHandler(BaseHandler):
         demographics = []
 
         for row in data:
-            image = row.get("data") or row.get("body")
+            image_base64 = row.get("data") or row.get("body")
+            image_data = base64.b64decode(image_base64)
+            image = io.BytesIO(image_data)
             image_tensor = self.preprocess_image(image)
             images.append(image_tensor)
 
@@ -61,6 +63,8 @@ class MultimodalMultilabelHandler(BaseHandler):
         return torch.cat(images), torch.cat(demographics)
 
     def inference(self, image_tensor, demographics_tensor):
+        print("Image tensor shape:", image_tensor.shape)
+        print("Demographics tensor shape:", demographics_tensor.shape)
         with torch.no_grad():
             output = self.model(image_tensor.to(self.device), demographics_tensor.to(self.device))
             probabilities = torch.sigmoid(output)
@@ -83,6 +87,10 @@ class MultimodalMultilabelHandler(BaseHandler):
         return results
 
     def handle(self, data, context):
-        image_tensor, demographics_tensor = self.preprocess(data)
-        probabilities = self.inference(image_tensor, demographics_tensor)
-        return self.postprocess(probabilities)
+        try:
+            image_tensor, demographics_tensor = self.preprocess(data)
+            probabilities = self.inference(image_tensor, demographics_tensor)
+            return self.postprocess(probabilities)
+        except Exception as e:
+            print("Error during Prediction:", str(e))
+            raise e

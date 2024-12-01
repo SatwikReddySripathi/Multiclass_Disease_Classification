@@ -52,13 +52,12 @@ jobs:
       id: create_endpoint
       run: |
           echo "Checking for existing endpoint..."
-          ENDPOINT_NAME="gitdeployendpoint"
           REGION="us-east1"
-          ENDPOINT_NAME=$(gcloud ai endpoints list --region=$REGION --filter="display_name=$ENDPOINT_NAME" --format="value(name)")
+          ENDPOINT_NAME=$(gcloud ai endpoints list --region=$REGION --filter="display_name=gitdeploy" --format="value(name)")
 
           if [ -z "$ENDPOINT_NAME" ]; then
             echo "No existing endpoint found. Creating a new one..."
-            ENDPOINT_NAME=$(gcloud ai endpoints create --region=$REGION --display-name=$ENDPOINT_NAMEt --format="value(name)")
+            ENDPOINT_NAME=$(gcloud ai endpoints create --region=$REGION --display-name=gitdeploy --format="value(name)")
           fi
 
           if [ -z "$ENDPOINT_NAME" ]; then
@@ -74,7 +73,6 @@ jobs:
     - name: Deploy Model to Endpoint
       run: |
           echo "Deploying model $MODEL_ID to endpoint $ENDPOINT_NAME..."
-          ENDPOINT_NAME="gitdeployendpoint"
           REGION="us-east1"
           MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name=gitdeploy" --format="value(name)")
 
@@ -83,7 +81,8 @@ jobs:
             exit 1
           fi
           
-          gcloud ai endpoints deploy-model (ENDPOINT : --region=$REGION) \
+          gcloud ai endpoints deploy-model $ENDPOINT_NAME \
+            --region=us-east1 \
             --model=$MODEL_ID \
             --display-name=gitdeployendpoint \
             --machine-type=n1-standard-2 \

@@ -53,11 +53,11 @@ jobs:
       run: |
           echo "Checking for existing endpoint..."
           REGION="us-east1"
-          ENDPOINT_NAME=$(gcloud ai endpoints list --region=$REGION --filter="display_name=gitdeploy" --format="value(name)")
+          ENDPOINT_NAME=$(gcloud ai endpoints list --region=$REGION --filter="display_name=gitdeployendpoint" --format="value(name)")
 
           if [ -z "$ENDPOINT_NAME" ]; then
             echo "No existing endpoint found. Creating a new one..."
-            ENDPOINT_NAME=$(gcloud ai endpoints create --region=$REGION --display-name=gitdeploy --format="value(name)")
+            ENDPOINT_NAME=$(gcloud ai endpoints create --region=$REGION --display-name=gitdeployendpoint --format="value(name)")
           fi
 
           if [ -z "$ENDPOINT_NAME" ]; then

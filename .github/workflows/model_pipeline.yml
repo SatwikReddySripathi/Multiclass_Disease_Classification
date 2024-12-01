@@ -39,7 +39,7 @@ jobs:
       run: |
         MODEL_NAME="gitdeploy"
         REGION="us-east1"
-        MODEL_URI="gs://nih-dataset-mlops/Testing/model.mar"
+        MODEL_URI="gs://nih-dataset-mlops/Testing"
 
         gcloud ai models upload \
           --region=$REGION \

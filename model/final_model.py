@@ -327,17 +327,6 @@ def grid_search():
         print(f"Model saved at {output_dir}/best_model.jit")
                                           
 
-    items = os.listdir(output_dir)
-    logging.info("----------------check-----------------------------------")
-    print("Items in '{output_dir}':")
-    for i in items:
-        print(i)
-    model_path = os.getcwd()
-    temp_dir = os.path.join(model_path,"model")
-    temp_items = os.listdir(temp_dir)
-    print("Items in '{temp_dir}':")
-    for i in temp_items:
-        print(i)
     
     handler_path = os.path.join(os.getcwd(),"model","model_handler.py")
     serialized_path = os.path.join(output_dir,"best_model.jit")
@@ -351,10 +340,9 @@ def grid_search():
     handler=handler_path,
     export= export_path)
     dummy_items = os.listdir(export_path)
-    logging.info("----------------check-----------------------------------")
-    print("Items in '{output_dir}':")
-    for i in dummy_items:
-        print(i)
+    logging.info("----------------MAR PATH    -----------------------------------")
+    logging.info(export_path)
+    
     
 
 # Main script

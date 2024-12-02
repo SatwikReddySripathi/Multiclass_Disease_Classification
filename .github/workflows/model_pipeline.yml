@@ -93,4 +93,4 @@ jobs:
         GCP_PROJECT_ID='812555529114'
         REGION="us-east1"
         ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
-        echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/${ENDPOINT_ID}:predict"
+        echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/$ENDPOINT_NAME:predict"

@@ -81,8 +81,7 @@ jobs:
         run: |
           echo "Uploading model to GCS..."
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          gsutil cp model_output/best_model.pt gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pt
-          gsutil cp model_output/best_model.pt gs://$GCS_BUCKET/models/best_model-latest.pt
+          gsutil cp model_output/model.mar gs://$GCS_BUCKET/models/model.mar
           echo "Model uploaded successfully."
       
       - name: Notify on Success

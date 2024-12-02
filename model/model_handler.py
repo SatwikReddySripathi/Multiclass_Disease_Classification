@@ -1,9 +1,12 @@
 import torch
 import json
 import os
+import importlib.util
 from torchvision import transforms
 from PIL import Image
 from ts.torch_handler.base_handler import BaseHandler
+import base64
+import io
 
 class MultimodalMultilabelHandler(BaseHandler):
     def __init__(self):
@@ -26,12 +29,25 @@ class MultimodalMultilabelHandler(BaseHandler):
         model_dir = properties.get("model_dir")
         self.device = torch.device("cuda:" + str(properties.get("gpu_id")) if torch.cuda.is_available() else "cpu")
 
-        # Load model
-        model_file = self.manifest['model'].get('serializedFile', None)
-        if not model_file:
+        # Dynamically import Model.py
+        model_file = os.path.join(model_dir, "Model.py")
+        spec = importlib.util.spec_from_file_location("Model", model_file)
+        model_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(model_module)
+
+        # Load model architecture from Model.py
+        model_class_name = model_module.__dir__()[0]  # Assuming the first class is the model
+        self.model_class = getattr(model_module, model_class_name)
+
+        # Load model weights
+        serialized_file = self.manifest['model'].get('serializedFile', None)
+        if not serialized_file:
             raise KeyError("'serializedFile' key not found in manifest['model']")
-        model_path = os.path.join(model_dir, model_file)
-        self.model = torch.jit.load(model_path, map_location=self.device)
+        model_path = os.path.join(model_dir, serialized_file)
+
+        self.model = self.model_class()  # Initialize model
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+        self.model.to(self.device)
         self.model.eval()
 
     def preprocess_image(self, image):

@@ -87,12 +87,20 @@ def upload_data_to_gcp():
     bucket_name = 'nih-dataset-mlops'
     file_path = 'Processed_Data'
     blob_folder_name = 'Data_Preprocessing_files'
-    blob_name = 'preprocessed_data.pkl'
+    blob_name1 = 'train_preprocessed_data.pkl'
+    blob_name2 = 'test_data.pkl'
+
     # Get the bucket
     bucket = storage_client.get_bucket(bucket_name)
     # Create a blob object
-    blob = bucket.blob(blob_folder_name +"/"+blob_name)
+    blob1 = bucket.blob(blob_folder_name +"/"+blob_name1)
     # Upload the file
-    blob.upload_from_filename(os.path.join(PROJECT_DIR, file_path, blob_name))
+    blob1.upload_from_filename(os.path.join(PROJECT_DIR, file_path, blob_name1))
 
-    print(f"File {blob_name} uploaded to {file_path}")
+    print(f"File {blob_name1} uploaded to {file_path}")
+
+    blob2 = bucket.blob(blob_folder_name +"/"+blob_name2)
+    # Upload the file
+    blob2.upload_from_filename(os.path.join(PROJECT_DIR, file_path, blob_name2))
+
+    print(f"File {blob_name2} uploaded to {file_path}")

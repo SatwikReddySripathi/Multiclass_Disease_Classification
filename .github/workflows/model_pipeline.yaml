@@ -72,8 +72,8 @@ jobs:
         run: |
           echo "Checking contents of model_output directory:"
           ls -l model_output
-          if [ ! -f model_output/best_model.pt ]; then
-            echo "❌ Model file best_model.pt not found"
+          if [ ! -f model_output/model.mar ]; then
+            echo "❌ Model file model.mar not found"
             exit 1
           fi
       

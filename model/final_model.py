@@ -320,8 +320,9 @@ def grid_search():
         #torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
         torch.save(best_model, os.path.join(output_dir, "best_model.pt"))
         print(f"Model saved at {output_dir}/best_model.pt with accuracy: {best_val_accuracy}%")
-        save_model_as_torchscript(os.path.join(output_dir, "best_model.pt"), os.path.join(output_dir, "best_model.jit")
+        save_model_as_torchscript(os.path.join(output_dir, "best_model.pt"), os.path.join(output_dir, "best_model.jit"))
         print(f"Model saved at {output_dir}/best_model.jit")
+                                          
 
     #PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     handler_path = "app/model/model_handler.py"

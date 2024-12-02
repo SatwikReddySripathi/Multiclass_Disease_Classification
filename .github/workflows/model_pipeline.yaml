@@ -72,7 +72,7 @@ jobs:
         run: |
           echo "Checking contents of model_output directory:"
           ls -l model_output
-          if [ ! -f model_output/model.mar ]; then
+          if [ ! -f model/model.mar ]; then
             echo "❌ Model file model.mar not found"
             exit 1
           fi
@@ -81,7 +81,7 @@ jobs:
         run: |
           echo "Uploading model to GCS..."
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          gsutil cp model_output/model.mar gs://$GCS_BUCKET/models/model.mar
+          gsutil cp model/model.mar gs://$GCS_BUCKET/models/model.mar
           echo "Model uploaded successfully."
       
       - name: Notify on Success

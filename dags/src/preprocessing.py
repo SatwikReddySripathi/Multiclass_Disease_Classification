@@ -18,7 +18,6 @@ from IPython.display import display
 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-
 PROJECT_DIR = '/opt/airflow'
 LOG_DIR = os.path.join(PROJECT_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -29,11 +28,10 @@ PREPROCESSED_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'preprocessed_data.pkl'
 CONFIG_DIR = os.path.join(PROJECT_DIR, "config")
 LABEL_JSON_PATH = os.path.join(PICKLE_DIR, 'labels_to_indices.json')
 
-
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
 
-file_handler = logging.FileHandler(LOG_FILE_PATH)
+file_handler = logging.FileHandler(log_file_path)
 file_handler.setLevel(logging.DEBUG)
 
 console_handler = logging.StreamHandler()
@@ -46,7 +44,7 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-logger.info("Logging configuration is set. Logs will be saved to: {}".format(LOG_FILE_PATH))
+logger.info("Logging configuration is set. Logs will be saved to: {}".format(log_file_path))
 
 
 def load_label_indices(json_path):

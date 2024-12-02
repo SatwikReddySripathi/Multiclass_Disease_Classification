@@ -328,7 +328,7 @@ def grid_search():
     #PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     handler_path = "app/model/model_handler.py"
     serialized_path = "app/model_output/best_model.jit"
-    model_path = "app/model_output/model.py"
+    model_path = "app/model/model.py"
     create_torch_model_archive(
     model_name="model",
     version="1.0",

@@ -11,3 +11,7 @@ torchmetrics
 Pillow
 torchvision
 mlflow
+torchserve
+torch-model-archiver
+base64
+io

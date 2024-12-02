@@ -3,6 +3,8 @@ import json
 import os
 from torchvision import transforms
 from PIL import Image
+import io
+import base64
 from ts.torch_handler.base_handler import BaseHandler
 
 class MultimodalMultilabelHandler(BaseHandler):

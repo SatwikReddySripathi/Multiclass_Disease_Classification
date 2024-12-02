@@ -122,5 +122,5 @@ def splitting_airflow():
     custom_log(f"Sample value of the first key: {data[list(data.keys())[0]]}")
     split_pickle_data(input_pickle_file, output_folder, test_size=0.2, random_state=42)
 
-if __name__ == "__main__":
-    splitting_airflow()
+# if __name__ == "__main__":
+#     splitting_airflow()

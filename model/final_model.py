@@ -218,7 +218,7 @@ def save_model_as_torchscript(model_path, output_path):
     # Save the traced model
     traced_model.save(output_path)
 
-def create_torch_model_archive(model_name, version, serialized_file, model_file, handler):
+def create_torch_model_archive(model_name, version, serialized_file, model_file, handler, export):
     """
     Function to create a Torch model archive using the torch-model-archiver command.
 
@@ -235,7 +235,8 @@ def create_torch_model_archive(model_name, version, serialized_file, model_file,
             "--version", version,
             "--serialized-file", serialized_file,
             "--model-file", model_file,
-            "--handler", handler
+            "--handler", handler,
+            "--export-path", export
         ]
         
         # Execute the command
@@ -328,13 +329,15 @@ def grid_search():
     #PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     handler_path = "app/model/model_handler.py"
     serialized_path = "app/model_output/best_model.jit"
+    export_path="app/model_output"
     model_path = "app/model/model.py"
     create_torch_model_archive(
     model_name="model",
     version="1.0",
     serialized_file=serialized_path,
     model_file=model_path, 
-    handler=handler_path)
+    handler=handler_path,
+    export=export_path)
                                   
         
 

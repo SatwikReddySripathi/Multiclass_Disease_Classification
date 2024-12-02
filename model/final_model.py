@@ -202,12 +202,64 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, num_epoch
 
     return best_val_accuracy
 
+def save_model_as_torchscript(model_path, output_path):
+    # Load the trained model
+    model = torch.load(model_path)
+    model.eval()
+
+    # Create an example input for tracing (assuming the image size and demographic input)
+    image_tensor = torch.rand((1, 1, 224, 224))  # Example input for grayscale image
+    demographics_tensor = torch.rand((1, 3))  # Example demographic tensor ([gender_m, gender_f, age])
+
+    # Trace the model
+    traced_model = torch.jit.trace(model, (image_tensor, demographics_tensor))
+
+    # Save the traced model
+    traced_model.save(output_path)
+
+def create_torch_model_archive(model_name, version, serialized_file, handler):
+    """
+    Function to create a Torch model archive using the torch-model-archiver command.
+
+    Args:
+        model_name (str): The name of the model to be archived.
+        version (str): The version of the model.
+        serialized_file (str): The path to the serialized PyTorch model file (.jit).
+        handler (str): The path to the handler.py file.
+    """
+    try:
+        command = [
+            "torch-model-archiver",
+            "--model-name", model_name,
+            "--version", version,
+            "--serialized-file", serialized_file,
+            "--handler", handler
+        ]
+        
+        # Execute the command
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        print("Model archive created successfully:")
+        print(result.stdout.decode("utf-8"))
+    except subprocess.CalledProcessError as e:
+        print("Failed to create model archive:")
+        print(e.stderr.decode("utf-8"))
+
 # Grid search function
 def grid_search():
+    '''
     param_grid = {
         "num_epochs": [5],
         "batch_size": [32, 64],
         "learning_rate": [1e-5, 1e-4],
+        "demographics_fc_size": [64]
+    }
+    '''
+
+    param_grid = {
+        "num_epochs": [1],
+        "batch_size": [32],
+        "learning_rate": [1e-5],
         "demographics_fc_size": [64]
     }
 
@@ -267,6 +319,19 @@ def grid_search():
         #torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
         torch.save(best_model, os.path.join(output_dir, "best_model.pt"))
         print(f"Model saved at {output_dir}/best_model.pt with accuracy: {best_val_accuracy}%")
+        save_model_as_torchscript(os.path.join(output_dir, "best_model.pt"), os.path.join(output_dir, "best_model.jit")
+        print(f"Model saved at {output_dir}/best_model.jit")
+
+    #PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    handler_path = "app/model/model_handler.py"
+    serialized_path = "app/model/best_model.jit"
+    create_torch_model_archive(
+    model_name="model",
+    version="1.0",
+    serialized_file=serialized_path,
+    handler=handler_path)
+                                  
+        
 
 # Main script
 if __name__ == "__main__":

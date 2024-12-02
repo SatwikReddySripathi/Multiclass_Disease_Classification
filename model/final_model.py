@@ -326,12 +326,11 @@ def grid_search():
         print(f"Model saved at {output_dir}/best_model.jit")
                                           
 
-    
+    mar_path = "/app/mar_out"
+    if not os.path.exists(mar_path):
+        os.makedirs(mar_path)
     handler_path = "app/model/model_handler.py"
     serialized_path = "app/model_output/best_model.jit"
-    #export_path= os.getcwd()
-    logging.info("The current directory is:")
-    logging.info(os.getcwd())
     model_path = "app/model/model.py"
     create_torch_model_archive(
     model_name="model",
@@ -339,7 +338,8 @@ def grid_search():
     serialized_file=serialized_path,
     model_file=model_path, 
     handler=handler_path,
-    export="/app/model")
+    export=mar_path)
+    print(f"Model saved at {mar_path}/model.mar")
                                   
         
 

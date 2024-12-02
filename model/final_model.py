@@ -318,6 +318,7 @@ def grid_search():
     if best_model is not None:
         output_dir = "/app/model_output"
         if not os.path.exists(output_dir):
+            logging.info("## Creating Directory")
             os.makedirs(output_dir)
         #torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
         torch.save(best_model, os.path.join(output_dir, "best_model.pt"))
@@ -326,9 +327,18 @@ def grid_search():
         print(f"Model saved at {output_dir}/best_model.jit")
                                           
 
-    mar_path = "/app/mar_out"
-    if not os.path.exists(mar_path):
-        os.makedirs(mar_path)
+    items = os.listdir(output_dir)
+    logging.info("----------------check-----------------------------------")
+    print("Items in '{output_dir}':")
+    for i in items:
+        print(i)
+    model_path = os.getcwd()
+    temp_dir = os.path.join(model_path,"model")
+    temp_items = os.listdir(temp_dir)
+    print("Items in '{temp_dir}':")
+    for i in temp_items:
+        print(i)
+    
     handler_path = "app/model/model_handler.py"
     serialized_path = "app/model_output/best_model.jit"
     model_path = "app/model/model.py"
@@ -338,7 +348,7 @@ def grid_search():
     serialized_file=serialized_path,
     model_file=model_path, 
     handler=handler_path,
-    export=mar_path)
+    export=output_dir)
     print(f"Model saved at {mar_path}/model.mar")
                                   
         

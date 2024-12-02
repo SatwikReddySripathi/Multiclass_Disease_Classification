@@ -20,6 +20,7 @@ from torchmetrics.classification import MultilabelPrecision, MultilabelRecall, M
 
 from google.cloud import storage
 import os
+import subprocess
 gcp_credentials_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = gcp_credentials_path
 # Logging setup

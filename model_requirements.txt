@@ -12,7 +12,4 @@ Pillow
 torchvision
 mlflow
 torchserve
-base64
-io
-subprocess
 torch-model-archiver

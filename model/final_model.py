@@ -342,17 +342,20 @@ def grid_search():
     handler_path = os.path.join(os.getcwd(),"model","model_handler.py")
     serialized_path = os.path.join(output_dir,"best_model.jit")
     model_path = os.path.join(os.getcwd(),"model","model.py")
+    export_path = os.path.join(os.getcwd(),output_dir)
     create_torch_model_archive(
     model_name="model",
     version="1.0",
     serialized_file=serialized_path,
     model_file=model_path, 
     handler=handler_path,
-    export= os.path.join(os.getcwd(),output_dir))
-    print(f"Model saved at {export}/model.mar")
+    export= export_path)
+    dummy_items = os.listdir(export_path)
+    logging.info("----------------check-----------------------------------")
+    print("Items in '{output_dir}':")
+    for i in dummy_items:
+        print(i)
     
-                                  
-        
 
 # Main script
 if __name__ == "__main__":

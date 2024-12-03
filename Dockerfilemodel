@@ -1,32 +1,19 @@
-# Use Python 3.8 as the base image
+# Python image Dockerfile
 FROM python:3.8
 
-# Install system-level dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Install any necessary dependencies
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Copy over the model requirements file and install dependencies
+# Copy over the model_requirements and install
 COPY model_requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r model_requirements.txt
 
 # Install google-cloud-storage library for GCS streaming
 RUN pip install --no-cache-dir google-cloud-storage
 
-# Set the working directory inside the container
+# Create directories for scripts and metrics
 WORKDIR /app
-
-# Copy the model directory and other necessary files into the container
 COPY model/ model/
 
-# Create a directory for model outputs
-RUN mkdir -p /app/model_output
-
-# Copy the GCP credentials file into the container
-COPY gcp-key.json /app/gcp-key.json
-
-# Set an environment variable to point to the credentials file
-ENV GOOGLE_APPLICATION_CREDENTIALS="/app/gcp-key.json"
-
-# Set the entry point to run the model training script
-CMD ["python", "model/test_run.py"]
+# Run as the main entry point to be overridden by each GitHub Actions step
+CMD ["python", "model/model_development_refined.py"]

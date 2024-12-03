@@ -1,0 +1,2 @@
+Best validation accuracy: 88.3616950283617
+Parameters: (5, 32, 1e-05, 64)

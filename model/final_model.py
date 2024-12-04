@@ -45,7 +45,7 @@ writer = SummaryWriter("runs/CustomResNet18_experiment")
 
 
 # Load data from GCP bucket
-def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, target_size=(224, 224),see=42):
+def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, target_size=(224, 224), seed=42):
 
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -100,7 +100,7 @@ def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, target
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     #test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}, Test samples: {len(test_dataset)}")
+    print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}")
 
     return train_loader, val_loader, test_loader
 
@@ -263,12 +263,13 @@ def grid_search():
             mlflow.log_param("learning_rate", learning_rate)
             mlflow.log_param("demographic_fc_size", demographic_fc_size)
             
-            logging.info("######################################################################")
+            logging.info("##################################    DOWNLOADING MODEL      ####################################")
             model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
+            logging.info("##################################    FREEZING MODEL      ####################################")
             freeze_unfreeze_layers(model, freeze=True)
-            logging.info("crossed one")
+            logging.info("############################# crossed one  ##################################################")
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-            logging.info("crossed two")
+            logging.info("############################## crossed two ###################################################")
             criterion = nn.BCEWithLogitsLoss()      
             logging.info("crossed three")
 

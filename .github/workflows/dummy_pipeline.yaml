@@ -1,4 +1,3 @@
-
 name: Deploy model to Vertex AI
 on:
   push:
@@ -11,8 +10,6 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-  IMAGE_NAME: "ml-model-image"
-  REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models-new"
   GCS_BUCKET: "nih-dataset-mlops"
 
 jobs:
@@ -24,7 +21,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    #Google Cloud Authentication
+    # Google Cloud Authentication
     - id: 'auth'
       name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v1'
@@ -34,48 +31,46 @@ jobs:
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v1'
 
+    # Organize and Upload Model to GCS
     - name: Organize and Upload Model to GCS
       run: |
         echo "Starting GCS operations..."
           
-          # Define paths
-          GCS_MODELS_PATH="gs://$GCS_BUCKET/models"
-          GCS_LATEST_PATH="gs://nih-dataset-mlops/Dummy/Latest"
-          GCS_VERSIONED_PATH="gs://nih-dataset-mlops/Dummy/Versioned"
+        # Define paths
+        GCS_LATEST_PATH="gs://nih-dataset-mlops/Dummy/Latest"
+        GCS_VERSIONED_PATH="gs://nih-dataset-mlops/Dummy/Versioned"
 
-          # Move files from 'latest' to 'versioned' with their actual timestamp
-          echo "Moving files from latest to versioned..."
-          for file in $(gsutil ls $GCS_LATEST_PATH/); do
-            if [[ $file != */ ]]; then
-              # Get file's actual timestamp from metadata
-              FILE_TIMESTAMP=$(gsutil stat $file | grep "Update time:" | awk '{print $3"-"$4}' | sed 's/[:-]//g' | sed 's/\..*//')
-              BASENAME=$(basename $file)
-              
-              # Move the file to the 'versioned' folder with the actual timestamp
-              gsutil mv "$file" "$GCS_VERSIONED_PATH/${FILE_TIMESTAMP}_$BASENAME"
-            fi
-          done
+        # List files in the Latest folder
+        echo "Listing files in the Latest folder:"
+        gsutil ls $GCS_LATEST_PATH/
 
-          # Upload a text file from the repository to the 'latest' folder
-          echo "Uploading text file from repository to the latest folder..."
-          gsutil cp model/Filedummy - 3.txt $GCS_LATEST_PATH/Filedummy - 3.txt
-          echo "GCS operations completed successfully."
-          
+        # Move files from 'Latest' to 'Versioned' with their actual timestamp
+        echo "Moving files from Latest to Versioned..."
+        for file in $(gsutil ls $GCS_LATEST_PATH/); do
+          if [[ $file != */ ]]; then
+            # Get file's actual timestamp from metadata
+            FILE_TIMESTAMP=$(gsutil stat $file | grep "Update time:" | awk '{print $3"-"$4}' | sed 's/[:-]//g' | sed 's/\..*//')
+            BASENAME=$(basename "$file")
+
+            # Print file details before moving
+            echo "Processing file: $BASENAME at $FILE_TIMESTAMP"
+
+            # Move the file to the 'Versioned' folder with the actual timestamp in its name
+            gsutil mv "$file" "$GCS_VERSIONED_PATH/${BASENAME}_${FILE_TIMESTAMP}"
+          fi
+        done
+
+        # Upload a text file from the repository to the 'Latest' folder
+        echo "Uploading text file from repository to the Latest folder..."
+        gsutil cp "model/Filedummy - 3.txt" "$GCS_LATEST_PATH/Filedummy - 3.txt"
+        echo "GCS operations completed successfully."
+
     - name: Notify on Success
       if: success()
       run: |
-          echo "✅ Text file uploaded to GCS successfully."
-
+          echo "✅ Files successfully moved and uploaded to GCS."
 
     - name: Notify on Failure
       if: failure()
       run: |
           echo "❌ GCS operations failed."
-
-        
-
-
-          
- 
-
-    

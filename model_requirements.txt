@@ -1,0 +1,12 @@
+scikit-learn
+scipy
+pandas
+numpy
+tensorflow
+google-cloud-storage
+pyyaml
+torch
+tensorflow-data-validation
+torchmetrics
+Pillow
+torchvision

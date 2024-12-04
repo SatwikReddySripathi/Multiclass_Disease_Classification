@@ -1,0 +1,61 @@
+
+name: Model Pipeline v1
+
+on:
+  push:
+    branches:
+      - dheeraj_model
+  pull_request:
+    branches:
+      - dheeraj_model
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }} # Your GCP Project ID
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }} # The service account key stored as a secret
+  IMAGE_NAME: "hello-world-image"
+  REGISTRY: "us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models"
+
+jobs:
+  model_pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # Step 2: Clean docker image
+      - name: Clean up Docker to free space
+        run: docker system prune -af --volumes
+
+      # Step 3: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Step 4: Login to GCP Artifact Registry
+      - name: Login to GCP Artifact Registry
+        uses: docker/login-action@v1
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GCP_SA_KEY }}
+
+      # Step 5: Build and Push Docker Image
+      - name: Build and Push Docker Image
+        run: |
+          docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
+          docker push $REGISTRY/$IMAGE_NAME:latest
+
+      # Step 6: Run Model with Raytuner from Docker Image
+      - name: Run Model development file
+        run: |
+          docker run --rm $REGISTRY/$IMAGE_NAME:latest python model/model_development_refined.py
+
+      - name: Notify on success
+        if: success()
+        run: echo "Unit tests passed successfully"
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "Unit tests failed"

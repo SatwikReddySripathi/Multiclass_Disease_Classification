@@ -25,6 +25,9 @@ This project is designed to develop, deploy, and maintain a machine learning mod
   - [Airflow Dags](#airflow-dags)
   - [Optimized Pipeline](#optimized-pipeline)
   - [Data Versioning](#data-versioning)
+  - [Model pipeline](#model-pipeline)
+  - [CI/CD](#CI/CD)
+  - [Bias Detection](#bias-detection)
   - [Contributors](#contributors)
 
 
@@ -72,6 +75,8 @@ This is the basic Project Flow and this will be updated after the final system a
 ├── .dvc
 │   ├── config                # Configuration file for DVC (Data Version Control)
 │   ├── .gitignore            # Specifies files/folders related to DVC to be ignored by Git
+├── .github/workflows
+│   ├── model_pipeline.yaml                # yaml file resposible for implementing CI/CD via GitHub actions
 ├── data
 │   ├── raw_notebooks              # Directory containing preprocessed training data
 │   │   ├── Pre-processing.ipynb   #A Visual example of how the pre-processing steps are executed for a sample data
@@ -95,14 +100,15 @@ This is the basic Project Flow and this will be updated after the final system a
 │   │   ├── anomaly_detection.py # this file uses the schema and other metrics to detect the anomalies
 │   │   ├── preprocessing.py # this file executes augmentation to overcome class imbalance and then perform pre-processing steps
 ├── logs/scheduler
-│   ├── model.py              # Defines the model architecture for training
-│   ├── train.py              # Script for training the machine learning model
+├── model
+│   ├── model_with_grid_search.py # Defines the model architecture for training, training process, validation process and best model picking
+│   ├── bias_detection.py      # Script for bias detection
 │   ├── evaluate.py           # Script for evaluating the model's performance
-│   ├── predict.py            # Script for making predictions using the trained model
-│   ├── requirements.txt      # Python dependencies required for the backend
 ├── .dvcignore                 # Specifies files/folders that should be ignored by DVC
 ├── .gitignore                 # Specifies files/folders that should be ignored by Git
-├── dockerfile                 # Dockerfile to build the Docker image for the main application
+├── dockerfile                 # Dockerfile to build the Docker image for the data pipeline
+├── Dockerfilemodel            # Dockerfile to build the Docker image for the model pipeline
+├── model_requirements.txt     # dependencies required for model pipeline
 ├── README.md                  # read me file
 ├── docker-compose.yaml        # Docker Compose file to set up and run multi-container Docker applications
 ├── requirements.txt           # Python dependencies required for running the project locally
@@ -175,7 +181,7 @@ The `anomaly_detection.py` script is a utility within this project that performs
 ## Augmentation and Pre-processing:
 The `preprocessing.py` scripts enhances data quality and increases dataset diversity of the medical images, which will support effective model training. It handles key tasks like loading, resizing, grayscale conversion, and applying CLAHE (Contrast Limited Adaptive Histogram Equalization) to improve contrast. These steps enhance image clarity, making them more suitable for model interpretation, especially critical in medical imaging. An augmentation generator also applies transformations like rotations and zooms, expanding the dataset and helping the model generalize better.
 
-## Data Piepline:
+## Data Pipeline:
 This is our data pipeline which includes key-functioning components:
 ![data_pipeline](assets/data_pipeline.PNG)
 
@@ -202,6 +208,14 @@ The Gantt chart shows an efficient timeline, with **Data Extraction** occupying 
     ```python
     dvc remote modify myremote credentialpath <GOOGLE-KEY-JSON-PATH>
     ```
+## Model Pipeline:
+In this pipeline, the processing of image classification model is executed. As a part of the pipeline, designing of the architecture, training, validation will take place. A grid search technique is also used for picking the best hyperparameters to increase the performance of the model. As an outcome of the pipeline the best model after validation and bias detection and mitigation, it is pushed to the GCP registry
+
+## CI/CD:
+Triggering of the model pipeline is ensured as a part of continuous integration and deployment using Github actions. `model_pipeline.yaml` is responsible for triggering of the pipeline and to execute each and every task in a sequence to run the model pipeline. Model pipeline is triggered whenever a new commit is pushed to the repository to continuously make sure that the model pipeline is up to the date
+
+## Bias Detection:
+Executing detection of bias is a vital step to ensure that the model is fair to every demographic feature present in the data using `bias_detection.py`. Tools like TFDV are used to slice the data into meaningful demographic slices and each slice is evaluated with the best model to ensure the model is not biased towards a feature
 
 
 ## Contributors

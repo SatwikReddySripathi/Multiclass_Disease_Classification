@@ -61,8 +61,10 @@ def load_dataframe(file_path):
         with open(file_path, 'rb') as f:
             data = pickle.load(f)
             print(f"Loaded data from pickle file with {len(data)} records.")
+            df = pd.DataFrame.from_dict(data, orient='index')
+            df['Age'] = df['Age'].astype(int) # Hardcoding this value to verify the functionality of the anomaly detection            
             custom_log(f"Loaded data from pickle file with {len(data)} records.")
-            return pd.DataFrame.from_dict(data, orient='index')
+            return df
     except Exception as e:
         print("Error:", e)
         custom_log(f"Error: {e}",level=logging.ERROR)

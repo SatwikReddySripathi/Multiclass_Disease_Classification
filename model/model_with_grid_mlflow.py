@@ -22,6 +22,7 @@ import logging
 import itertools
 import numpy as np
 from PIL import Image
+from google.colab import files
 
 import mlflow
 import mlflow.pytorch
@@ -38,6 +39,7 @@ from torchmetrics.classification import MultilabelPrecision, MultilabelRecall, M
 
 log_file_path = 'logs_model.log'
 param_file = 'param_grid_small.json'
+best_params_file = 'best_params.txt'
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
@@ -61,7 +63,7 @@ writer = SummaryWriter("runs/CustomResNet18_experiment")
 
 """# functions"""
 
-def load_data(original_data_pickle, batch_size, train_percent, val_percent, target_size=(224, 224), seed= 42):
+def load_data(original_data_pickle, batch_size, train_percent, target_size=(224, 224), seed= 42):
 
   torch.manual_seed(seed)
   np.random.seed(seed)
@@ -111,9 +113,12 @@ def load_data(original_data_pickle, batch_size, train_percent, val_percent, targ
   dataset = TensorDataset(images, demographics, labels)
 
   train_size = int(train_percent * len(dataset))
-  val_size = int(val_percent * len(dataset))
+  #val_size = int(val_percent * len(dataset))
+  val_size = len(dataset) - train_size  # this coz it would then add the remaining images, to the val dataset else we get an error
 
-  train_dataset, val_dataset = random_split(dataset, [train_size, val_size, test_size])
+  print(f"Train size: {train_size}, Validation size: {val_size}, length of dataset: {len(dataset)}")
+
+  train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
   train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
   val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
@@ -158,7 +163,7 @@ class CustomResNet18(nn.Module):
 
         return x
 
-def freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"]):
+def freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "demographics_fc", "fc"]):
     for name, param in model.named_parameters():
         if any(layer in name for layer in layers_to_train):
             param.requires_grad = not freeze
@@ -260,12 +265,12 @@ def grid_search():
           mlflow.log_param("learning_rate", learning_rate)
           mlflow.log_param("demographics_fc_size", demographics_fc_size)
 
-          train_loader, val_loader, test_loader = load_data(
-              config["file_path"], batch_size, config["train_percent"], config["val_percent"]
+          train_loader, val_loader = load_data(
+              config["file_path"], batch_size, config["train_percent"]
           )
 
           model = CustomResNet18(demographics_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
-          freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"])
+          freeze_unfreeze_layers(model, freeze=True)
 
           optimizer = optim.Adam(model.parameters(), lr=learning_rate)
           criterion = nn.BCEWithLogitsLoss()
@@ -287,11 +292,12 @@ def grid_search():
     if best_model is not None:
       print(f"Logging the best model with params: {best_params} and accuracy: {best_val_accuracy}")
       mlflow.pytorch.log_model(best_model, "best_model")
+      torch.save(best_model, "new_best_model.pt")
 
     #print(f"Best validation accuracy: {best_val_accuracy} with parameters: {best_params}")
 
 
-    with open("best_params.txt", "w") as f:
+    with open(best_params_file, "w") as f:
       f.write(f"Best validation accuracy: {best_val_accuracy}\n")
       f.write(f"Parameters: {best_params}\n")
 
@@ -300,11 +306,11 @@ def grid_search():
 if __name__ == "__main__":
 
   config = {
-    "file_path": "preprocessed_data_new.pkl",
+    "file_path": "train_preprocessed_data.pkl",
     "num_demographics": 3,
     "num_classes": 15,
-    "train_percent": 0.7,
-    "val_percent": 0.1
+    "train_percent": 0.8,
+    "val_percent": 0.2
   }
 
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -314,10 +320,19 @@ if __name__ == "__main__":
 
   print("Best parameters from grid search:", best_params)
 
-  best_model_uri = f"runs:/{mlflow.active_run().info.run_id}/best_model"
-  best_model = mlflow.pytorch.load_model(best_model_uri).to(device)
+  #best_model_uri = f"runs:/{mlflow.active_run().info.run_id}/best_model"
+  #best_model = mlflow.pytorch.load_model(best_model_uri).to(device)
 
   writer.close()
 
+files.download("new_best_model.pt")
+
+best_model_uri = f"runs:/{mlflow.active_run().info.run_id}/best_model"
+print(best_model_uri)
+print(best_model)
+
+# Commented out IPython magic to ensure Python compatibility.
+# %load_ext tensorboard
+# %tensorboard --logdir runs
 
 !mlflow ui --host 0.0.0.0 --port 5000

@@ -45,7 +45,11 @@ writer = SummaryWriter("runs/CustomResNet18_experiment")
 
 
 # Load data from GCP bucket
-def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, val_percent, target_size=(224, 224)):
+def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, target_size=(224, 224),see=42):
+
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    
     images = []
     demographics = []
     labels = []
@@ -87,14 +91,14 @@ def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, val_pe
     dataset = TensorDataset(images, demographics, labels)
 
     train_size = int(train_percent * len(dataset))
-    val_size = int(val_percent * len(dataset))
-    test_size = len(dataset) - train_size - val_size
+    val_size = len(dataset) - train_size
+    #test_size = len(dataset) - train_size - val_size
 
-    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    #test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}, Test samples: {len(test_dataset)}")
 
@@ -261,7 +265,7 @@ def grid_search():
             
             logging.info("######################################################################")
             model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
-            freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "demographics_fc","fc"])
+            freeze_unfreeze_layers(model, freeze=True)
             logging.info("crossed one")
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
             logging.info("crossed two")
@@ -270,15 +274,12 @@ def grid_search():
 
             logging.info("Splitting data")
 
-            train_loader, val_loader, test_loader = load_data_from_gcp(
+            train_loader, val_loader  = load_data_from_gcp(
                 bucket_name="nih-dataset-mlops",
                 file_path="Data_Preprocessing_files/preprocessed_data.pkl",
                 batch_size=batch_size,
-                train_percent=config["train_percent"],
-                val_percent=config["val_percent"]
+                train_percent=config["train_percent"]
             )
-
-
 
             logging.info("Training of the model has started")
 
@@ -301,9 +302,10 @@ def grid_search():
         save_model_as_torchscript(os.path.join(output_dir, "best_model.pt"), os.path.join(output_dir, "best_model.jit"))
         print(f"Model saved at {output_dir}/best_model.jit")
         
-    with open("model/best_params.txt","w") as f:
+    best_param_path = os.path.join(os.getcwd(),"model","best_params.txt")
+    with open(best_param_path,"w") as f:
         f.write(f"Best validation accuracy: {best_val_accuracy}\n")
-         f.write(f"Parameters: {best_params}\n")
+        f.write(f"Parameters: {best_params}\n")
         
     
     handler_path = os.path.join(os.getcwd(),"model","model_handler.py")

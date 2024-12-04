@@ -1,4 +1,4 @@
-name: Deploy model to Vertex AI
+name: Stream
 on:
   push:
     branches:

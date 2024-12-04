@@ -320,8 +320,8 @@ def grid_search():
     handler=handler_path,
     export= export_path)
     dummy_items = os.listdir(export_path)
+    return best_params
 
-return best_params 
     
     
 

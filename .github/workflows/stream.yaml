@@ -37,11 +37,11 @@ jobs:
         project_id: "${{ secrets.GCP_PROJECT_ID }}"
         install_components: beta
 
-   - name: Build and Push Docker Image
-  run: |
-    docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
-    docker push $REGISTRY/$IMAGE_NAME:latest
-
+    # Step 4: Build and Push Docker Image
+    - name: Build and Push Docker Image
+      run: |
+        docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
+        docker push $REGISTRY/$IMAGE_NAME:latest
 
     # Step 5: Deploy to Cloud Run
     - name: Deploy to Cloud Run

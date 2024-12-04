@@ -42,7 +42,7 @@ logger.addHandler(console_handler)
 
 # TensorBoard writer setup
 writer = SummaryWriter("runs/CustomResNet18_experiment")
-#os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/content/black-resource-440218-c3-5c0b7f31ce1f.json'
+
 
 # Load data from GCP bucket
 def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, val_percent, target_size=(224, 224)):
@@ -125,77 +125,54 @@ class CustomResNet18(nn.Module):
         x = self.fc(x)
         return x
 
+def freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "demographics_fc","fc"]):
+    for name, param in model.named_parameters():
+        if any(layer in name for layer in layers_to_train):
+            param.requires_grad = not freeze
+        else:
+            param.requires_grad = freeze
+
 # Training function
 def train_model(train_loader, val_loader, model, criterion, optimizer, num_epochs=10):
     logging.info("#################### Entered TRAIN MODEL ################")
     model.train()
     best_val_accuracy = 0
 
-    logging.info("#################### Entered TRAIN MODEL STEP-2 ################")
     for epoch in range(num_epochs):
-        logging.info("#################### Entered TRAIN MODEL STEP-3 ################")
         running_loss = 0.0
-        logging.info("#################### Entered TRAIN MODEL STEP-4 ################")
         for inputs, demographics, labels in train_loader:
-            logging.info("#################### Entered TRAIN MODEL STEP-5 ################")
             inputs, demographics, labels = inputs.to(device), demographics.to(device), labels.to(device)
-            logging.info("#################### Entered TRAIN MODEL STEP-6 ################")
             optimizer.zero_grad()
-            logging.info("#################### Entered TRAIN MODEL STEP-7 ################")
             outputs = model(inputs, demographics)
-            logging.info("#################### Entered TRAIN MODEL STEP-8 ################")
             loss = criterion(outputs, labels.float())
-            logging.info("#################### Entered TRAIN MODEL STEP-9 ################")
             loss.backward()
-            logging.info("#################### Entered TRAIN MODEL STEP-10 ################")
             optimizer.step()
-            logging.info("#################### Entered TRAIN MODEL STEP-11 ################")
             running_loss += loss.item()
 
-        logging.info("#################### Entered TRAIN MODEL STEP-12 ################")
+        
         avg_train_loss = running_loss / len(train_loader)
-        logging.info("#################### Entered TRAIN MODEL STEP-13 ################")
         writer.add_scalar("Loss/Train", avg_train_loss, epoch)
 
-        logging.info("#################### Entered TRAIN MODEL STEP-14 ################")
         model.eval()
-        logging.info("#################### Entered TRAIN MODEL STEP-15 ################")
         val_loss = 0.0
-        logging.info("#################### Entered TRAIN MODEL STEP-16 ################")
         correct = 0
-        logging.info("#################### Entered TRAIN MODEL STEP-17 ################")
         total = 0
-        logging.info("#################### Entered TRAIN MODEL STEP-18 ################")
         with torch.no_grad():
-            logging.info("#################### Entered TRAIN MODEL STEP-19 ################")
             for inputs, demographics, labels in val_loader:
-                logging.info("#################### Entered TRAIN MODEL STEP-20 ################")
                 inputs, demographics, labels = inputs.to(device), demographics.to(device), labels.to(device)
-                logging.info("#################### Entered TRAIN MODEL STEP-21 ################")
                 outputs = model(inputs, demographics)
-                logging.info("#################### Entered TRAIN MODEL STEP-22 ################")
                 val_loss += criterion(outputs, labels.float()).item()
-                logging.info("#################### Entered TRAIN MODEL STEP-23 ################")
                 probabilities = torch.sigmoid(outputs)
-                logging.info("#################### Entered TRAIN MODEL STEP-24 ################")
                 predicted = (probabilities >= 0.5).int()
-                logging.info("#################### Entered TRAIN MODEL STEP-25 ################")
                 correct += (predicted == labels).sum().item()
-                logging.info("#################### Entered TRAIN MODEL STEP-26 ################")
                 total += labels.numel()
 
-        logging.info("#################### Entered TRAIN MODEL STEP-27 ################")
         avg_val_loss = val_loss / len(val_loader)
-        logging.info("#################### Entered TRAIN MODEL STEP-29 ################")
         val_accuracy = 100 * correct / total
-        logging.info("#################### Entered TRAIN MODEL STEP-30 ################")
         writer.add_scalar("Loss/Validation", avg_val_loss, epoch)
-        logging.info("#################### Entered TRAIN MODEL STEP-31 ################")
         writer.add_scalar("Accuracy/Validation", val_accuracy, epoch)
-        logging.info("#################### Entered TRAIN MODEL STEP-32 ################")
 
         if val_accuracy > best_val_accuracy:
-            logging.info("#################### Entered TRAIN MODEL STEP-33 ################")
             best_val_accuracy = val_accuracy
 
         print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {avg_train_loss}, Validation Loss: {avg_val_loss}, Validation Accuracy: {val_accuracy}%")
@@ -284,6 +261,7 @@ def grid_search():
             
             logging.info("######################################################################")
             model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
+            freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "demographics_fc","fc"])
             logging.info("crossed one")
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
             logging.info("crossed two")
@@ -300,10 +278,7 @@ def grid_search():
                 val_percent=config["val_percent"]
             )
 
-            #print("######################################################################")
-            #model = CustomResNet18(demographic_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
-            #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-            #criterion = nn.BCEWithLogitsLoss()
+
 
             logging.info("Training of the model has started")
 
@@ -320,13 +295,16 @@ def grid_search():
         if not os.path.exists(output_dir):
             logging.info("## Creating Directory")
             os.makedirs(output_dir)
-        #torch.save(best_model.state_dict(), os.path.join(output_dir, "best_model.pth"))
+
         torch.save(best_model, os.path.join(output_dir, "best_model.pt"))
         print(f"Model saved at {output_dir}/best_model.pt with accuracy: {best_val_accuracy}%")
         save_model_as_torchscript(os.path.join(output_dir, "best_model.pt"), os.path.join(output_dir, "best_model.jit"))
         print(f"Model saved at {output_dir}/best_model.jit")
-                                          
-
+        
+    with open("model/best_params.txt","w") as f:
+        f.write(f"Best validation accuracy: {best_val_accuracy}\n")
+         f.write(f"Parameters: {best_params}\n")
+        
     
     handler_path = os.path.join(os.getcwd(),"model","model_handler.py")
     serialized_path = os.path.join(output_dir,"best_model.jit")
@@ -340,8 +318,8 @@ def grid_search():
     handler=handler_path,
     export= export_path)
     dummy_items = os.listdir(export_path)
-    logging.info("----------------MAR PATH    -----------------------------------")
-    logging.info(export_path)
+
+return best_params 
     
     
 

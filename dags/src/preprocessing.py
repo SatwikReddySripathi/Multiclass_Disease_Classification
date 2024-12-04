@@ -1,6 +1,7 @@
 import os
 import io
 import cv2
+import csv
 import time
 import json
 import random
@@ -16,6 +17,8 @@ from PIL import Image
 from PIL import ImageOps
 from IPython.display import display
 
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 PROJECT_DIR = '/opt/airflow'
@@ -23,10 +26,13 @@ LOG_DIR = os.path.join(PROJECT_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE_PATH = os.path.join(LOG_DIR, 'preprocessing.log')
 PICKLE_DIR = os.path.join(PROJECT_DIR, "Processed_Data")
-ORIGINAL_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'raw_compressed_data.pkl')
-PREPROCESSED_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'preprocessed_data.pkl')
+# ORIGINAL_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'raw_compressed_data.pkl')
+ORIGINAL_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'train_data.pkl')
+PREPROCESSED_PICKLE_FILE_PATH = os.path.join(PICKLE_DIR, 'train_preprocessed_data.pkl')
 CONFIG_DIR = os.path.join(PROJECT_DIR, "config")
 LABEL_JSON_PATH = os.path.join(PICKLE_DIR, 'labels_to_indices.json')
+STATS_FILE= os.path.join(PICKLE_DIR, 'demographics_stats_for_dummy.pkl')
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
@@ -184,6 +190,51 @@ def apply_augmentation(image, augmentation_generator):
 
   return augmented_images
 
+
+def get_demographic_info(original_data_pickle, stats_file= STATS_FILE):
+    """
+    Reads demographic data from a pickle file, calculates mean, std for age,
+    and creates a one-hot encoder for gender. Saves these stats to a file
+    if they change, and returns the scaler and encoder.
+    """
+
+    """if os.path.exists(stats_file):
+      with open(stats_file, 'rb') as f:
+        saved_stats = pickle.load(f)
+        print("Loaded demographics stats from file.")
+        return saved_stats['age_scaler'], saved_stats['gender_encoder']"""
+
+
+    ages= []
+    genders= []
+
+    with open(original_data_pickle, 'rb') as f:
+        data = pickle.load(f)
+
+    for item in data.values():
+        ages.append(item['Age'])
+        genders.append(item['Gender'])
+
+    ages = np.array(ages)
+    genders = np.array(genders).reshape(-1, 1)  # Gender should be a 2D array for OneHotEncoder
+
+    age_scaler = StandardScaler().fit(ages.reshape(-1, 1))
+    gender_encoder = OneHotEncoder(sparse_output=False).fit(genders)
+
+    logging.info("Calculated and saved new demographics stats.")
+
+    with open(stats_file, 'wb') as f:
+        pickle.dump({'age_scaler': age_scaler, 'gender_encoder': gender_encoder}, f)
+
+    """Since I'm dumping it to a pickle file, the states of the scaler and enconder are saved as such.
+       I can load the pickle file and say age_scaler.transform(new_age) and it'll transform.
+    """
+
+    logging.info("Saved new demographics stats.")
+
+    return age_scaler, gender_encoder
+
+
 def process_images(original_data_pickle, preprocessed_data_pickle, label_json_path, is_training=False):
   """
   Processes images by preprocessing and optionally augmenting them,
@@ -200,7 +251,7 @@ def process_images(original_data_pickle, preprocessed_data_pickle, label_json_pa
     with open(original_data_pickle, 'rb') as f:
       image_data = pickle.load(f)
     logging.info(f"Loaded data from {original_data_pickle} with {len(image_data)} entries.")
-
+    age_scaler, gender_encoder = get_demographic_info(original_data_pickle)
 
     if is_training:
       logging.info("Loading augmented indices for training mode.")
@@ -214,6 +265,12 @@ def process_images(original_data_pickle, preprocessed_data_pickle, label_json_pa
     for image_index, image_info in tqdm(image_data.items(), desc="Processing images"):
       image_label = image_info['image_label']
       image_bytes = image_info['image_data']
+      gender_raw= image_info['Gender']
+      age_raw= image_info['Age']
+
+      age = age_scaler.transform([[age_raw]])[0][0]
+      gender= gender_encoder.transform([[gender_raw]])[0] #one-hot encoding of gender
+
       image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
 
       if is_training and int(image_index) in augmented_indices:
@@ -231,9 +288,10 @@ def process_images(original_data_pickle, preprocessed_data_pickle, label_json_pa
           aug_preprocessed_image.save(aug_image_bytes, format='JPEG')
           processed_images[f'aug_{aug_num}_{image_index}'] = {
               'image_data': aug_image_bytes.getvalue(),
-              'image_label': image_label
+              'image_label': image_label,
+              'gender': gender,
+              'age': age
           }
-
 
       preprocessed_image = preprocess_image(image)
 
@@ -247,7 +305,9 @@ def process_images(original_data_pickle, preprocessed_data_pickle, label_json_pa
       preprocessed_image.save(preprocessed_image_bytes, format='JPEG')
       processed_images[image_index] = {
           'image_data': preprocessed_image_bytes.getvalue(),
-          'image_label': image_label
+          'image_label': image_label,
+          'gender': gender,
+          'age': age
       }
 
     logging.info(f"Saving all processed images to {preprocessed_data_pickle}")
@@ -255,8 +315,6 @@ def process_images(original_data_pickle, preprocessed_data_pickle, label_json_pa
     with open(preprocessed_data_pickle, 'wb') as f:
       pickle.dump(processed_images, f)
       logging.info(f"All processed images saved to {preprocessed_data_pickle}")
-
-    #files.download(preprocessed_data_pickle)
 
   except Exception as e:
     logging.error(f"An error occurred during image processing: {e}")

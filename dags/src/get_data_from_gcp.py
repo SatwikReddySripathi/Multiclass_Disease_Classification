@@ -109,7 +109,7 @@ def get_file_contents_as_dict(bucket, md5_keys):
                     print(f"Parsing CSV content for {blob.name}...")
                     custom_log(f"Parsing CSV content for {blob.name}...")
                     csv_reader = csv.DictReader(StringIO(content))
-                    csv_data = {row['Image Index']: [row['Labels'],row['Age'],row['Gender']] for row in csv_reader}
+                    csv_data = {row['Image Index']: [row['Labels'],row['Age'],row['Gender'],row['One-Hot Encoding']] for row in csv_reader}
                     print(f"CSV content loaded for {blob.name}.")
                     custom_log(f"CSV content loaded for {blob.name}.")
     
@@ -124,7 +124,8 @@ def create_final_json(json_content_dict, csv_content_dict):
             
             # Check if there's a matching label in the CSV content
             if relpath in csv_content_dict.keys():
-                image_label = csv_content_dict[relpath][0]
+                print(csv_content_dict[relpath])
+                image_label = csv_content_dict[relpath][3]
                 Age = csv_content_dict[relpath][1]
                 Gender = csv_content_dict[relpath][2]
                 

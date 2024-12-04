@@ -44,7 +44,7 @@ jobs:
         run: |
           docker build \
             -t ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }} \
-            -f Dockermodelfile .
+            -f Dockerfilemodel .
 
       - name: Push Streamlit Docker Image
         run: |

@@ -12,6 +12,7 @@ env:
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
   GCS_BUCKET: "nih-dataset-mlops"
 
+
 jobs:
   deploy-to-vertex-ai:
     runs-on: ubuntu-latest
@@ -47,7 +48,8 @@ jobs:
         # Move files from 'Latest' to 'Versioned' with their actual timestamp
         echo "Moving files from Latest to Versioned..."
         for file in $(gsutil ls "$GCS_LATEST_PATH/"); do
-          if [[ $file != */ ]]; then
+          # Ensure only files (not directories) are processed
+          if [[ $file == *.txt ]]; then
             # Get file's actual timestamp from metadata
             FILE_TIMESTAMP=$(gsutil stat "$file" | grep "Update time:" | awk '{print $3"-"$4}' | sed 's/[:-]//g' | sed 's/\..*//')
             BASENAME=$(basename "$file")

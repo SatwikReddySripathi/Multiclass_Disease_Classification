@@ -44,18 +44,16 @@ jobs:
         run: |
           docker build \
             -t ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }} \
-            -t ${{ env.REGISTRY }}/streamlit_app:latest \
-            -f Dockerfilemodel .
+            -f Dockermodelfile .
 
-      - name: Push Streamlit Docker Images
+      - name: Push Streamlit Docker Image
         run: |
           docker push ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }}
-          docker push ${{ env.REGISTRY }}/streamlit_app:latest
 
       - name: Deploy Streamlit App to Cloud Run
         run: |
           gcloud run deploy streamlit-app \
-            --image ${{ env.REGISTRY }}/streamlit_app:latest \
+            --image ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }} \
             --platform managed \
             --region us-east1 \
             --allow-unauthenticated \
@@ -63,4 +61,3 @@ jobs:
             --cpu 1 \
             --memory 512Mi \
             --verbosity=debug
-#

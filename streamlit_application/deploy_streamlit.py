@@ -76,7 +76,7 @@ from torchvision import transforms
 from torch.nn.functional import sigmoid
 # Disease Mapping and Information
 DISEASE_INFO = {
-    'No Disease Predicted':{
+    'No Finding':{
         "name": "No Finding",
         "description":"Our Model predicts that there might be any disese afftecting you, other than your own imagination",
         "symptoms":"Just some personal dissatisfaction",
@@ -766,94 +766,95 @@ DISEASE_INFO = {
 import base64
 import requests
 import subprocess  
+from io import BytesIO
+import io
+
 
 def get_access_token():
-    """Fetches the access token using gcloud."""
-    token = subprocess.check_output(["gcloud", "auth", "print-access-token"]).decode("utf-8").strip()
-    return token
+    """Fetches the access token using the full path to gcloud."""
+    gcloud_path = r"C:\Users\SNR\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
+    try:
+        token = subprocess.check_output([gcloud_path, "auth", "print-access-token"], stderr=subprocess.STDOUT).decode("utf-8").strip()
+        print('Done')
+        return token
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to fetch access token: {e.output.decode('utf-8')}")
 
-def encode_image_to_base64(image_path):
+
+def encode_image_to_base64(image):
     """Encodes an image file to a base64 string."""
-    with open(image_path, "rb") as image_file:
-        base64_image = base64.b64encode(image_file.read()).decode('utf-8')
-    return base64_image
-
+    buffered = BytesIO()  
+    image.save(buffered, format="JPEG")  
+    img_bytes = buffered.getvalue()  
+    image_base64 = base64.b64encode(img_bytes).decode('utf-8')  
+    return image_base64
 # Parameters
 #endpoint_url = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5963526768684957696:predict"
 endpoint_url2 = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5472634409301573632:predict"
-
 
 
 st.title("ThorAIx - Disease Prediction")
 st.write("Upload an X-ray image and provide demographic details.")
 
 gender = st.selectbox("Select Gender", ["Male", "Female"])
-gender_encoded = [1.0, 0.0] if gender == "Male" else [0.0, 1.0]
+if gender == "Male":
+    gender = "M"
+else:
+    gender = "F"
 
-age = st.number_input("Enter Age", min_value=0, max_value=120, step=1, value=25)
+age = st.number_input("Enter Age", min_value=0, max_value=120, step=1, value=50)
 
-uploaded_file = st.file_uploader("Upload an X-ray Image", type=["png", "jpg", "jpeg"])
-
-image_path = uploaded_file  # Replace with your image file path
-
-
+uploaded_image = st.file_uploader("Upload an X-ray Image", type=["png", "jpg", "jpeg"])
 
 if st.button("Predict"):
-    if uploaded_file:
+    if uploaded_image:
         try:
-            """image = Image.open(uploaded_file)
-            processed_image = preprocess_image(image)
-            demographics = torch.tensor([[age] + gender_encoded], dtype=torch.float32)
-
-            model = load_custom_model("models_best_model-latest.pt")"""
+            st.write('Uploaded Image')
+            image = Image.open(uploaded_image)
+            processed_image = encode_image_to_base64(image)  
+            st.image(image=image,width=150)
+            
             access_token = get_access_token()
-
-            # Encode the image
-            base64_image = encode_image_to_base64(image_path)
-
-            # Prepare the payload
+            
             payload = {
                 "instances": [
                     {
-                        "data": base64_image,
+                        "data": processed_image,
                         "gender": gender,
                         "age": age
                     }
                 ]
             }
 
-            # Set headers with the access token
+            print("\n\n\n",access_token)
             headers = {
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json"
             }
 
-            # Send the POST request
+
             response = requests.post(endpoint_url2, json=payload, headers=headers)
 
-            # Print the response
-            print("Response:")
-            print(response.json())
-
-
-            """with torch.no_grad():
-                prediction = model(processed_image, demographics)
-                prediction_probs = sigmoid(prediction).squeeze().tolist()"""
+            # Debug statements
+            #print("Response:")
+            #print(response.json())  
             
-            predictions = response.get('predictions', [])[0]
-            prediction_probs = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
+            response_data = response.json()  
+            predictions = response_data.get('predictions', [])[0]  
 
-            top_predictions = sorted(enumerate(prediction_probs, start=0), key=lambda x: x[1], reverse=True)[:3]
+            prediction_probs = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
+            print(prediction_probs)
+            top_predictions = sorted(prediction_probs, key=lambda x: x[1], reverse=True)[:3]
 
             st.write("### Probabile Diseases:")
             for idx, (disease_id, probability) in enumerate(top_predictions, start=1):
-                disease_name = DISEASE_INFO.get(disease_id, {}).get("name", "No Finding")
+                disease_name = DISEASE_INFO.get(disease_id, {}).get("name", "No Finding Present")
                 disease = DISEASE_INFO.get(disease_id, {})
                 
-                st.subheader(f"**{idx}. {disease_name}** - Probability: {probability:.2f}")
+                st.subheader(f"**{idx}. {disease_name}** ")
                 
                 if disease_id != 'No Finding':
-                    st.image(disease.get("image"), caption=disease.get("name"), use_column_width=True)
+                    st.image(disease.get("image"), caption=disease.get("name"), width=450)
                     st.subheader("Description")
                     st.write(disease.get("description"))
                     st.subheader("Symptoms")
@@ -875,9 +876,29 @@ if st.button("Predict"):
 
                     st.subheader("Prevention")
                     st.write("- " + "\n- ".join(disease.get("prevention")))
+
+
+                    st.markdown(
+    """
+    <div style="position: fixed; bottom: 0; right: 0; font-size: 12px; text-align: right; margin: 10px; color: gray;">
+        Information provided by <a href="https://www.clevelandclinic.org" target="_blank">Cleveland Clinic</a>, <a href="https://www.mayoclinic.org/" target="_blank">Mayo Clinic</a>  and other reputable sources. Images are used for educational purposes only.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
                 else:
-                    st.subheader("Our Prediction")
-                    st.write("Our Model predicts that there might be any disese afftecting you, other than your own imagination")
+                    st.subheader("No Disease Detected")
+                    st.write(
+                        "Great news! Based on the analysis of the provided image, our model has not detected any abnormalities. "
+                        "This does not guarantee the absence of health issues, and if you are experiencing any symptoms or have health concerns, "
+                        "we recommend consulting a healthcare professional for a thorough evaluation."
+                    )
+                    st.write(
+                        "Remember, regular checkups and a healthy lifestyle are the best ways to maintain your well-being. "
+                        "This prediction is for informational purposes only and should not be considered a substitute for professional medical advice."
+                    )
+
 
 
         except Exception as e:

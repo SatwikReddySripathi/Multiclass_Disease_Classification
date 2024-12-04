@@ -22,3 +22,4 @@ ray[tune]
 requests
 base64
 subprocess
+streamlit

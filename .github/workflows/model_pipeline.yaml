@@ -87,41 +87,21 @@ jobs:
           gcloud ai endpoints deploy-model $ENDPOINT_NAME --region=us-east1 --model=$MODEL_ID --display-name=gitmodelendpoint-deployment --machine-type=n1-standard-2 --traffic-split=0=100   
 
 
-    # Step 6: Get Endpoint URI
+    # Step 9: Get Endpoint URI
     - name: Get Endpoint URI
       run: |
         GCP_PROJECT_ID='812555529114'
         REGION="us-east1"
         ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
         echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/$ENDPOINT_NAME:predict"
-
-
-
-name: Deploy Streamlit App
-on:
-  push:
-    branches:
-      - dhanush_model
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
+      
+    # Step 10: Streamlit Application Deployment
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.8'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run Streamlit
+        
+    - name: Deploy/Run Streamlit App
       run: |
         streamlit run deploy_streamlit.py
       env:

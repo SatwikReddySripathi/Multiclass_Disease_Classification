@@ -1,0 +1,66 @@
+name: Deploy Streamlit to Cloud Run
+
+on:
+  push:
+    branches:
+      - dhanush_model
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+
+jobs:
+  deploy-streamlit:
+    runs-on: ubuntu-latest
+
+    env:
+      REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-repo"
+      IMAGE_TAG: ${{ github.sha }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker Authentication
+        run: |
+          gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
+
+      - name: Build Streamlit Docker Image
+        run: |
+          docker build \
+            -t ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }} \
+            -t ${{ env.REGISTRY }}/streamlit_app:latest \
+            -f Dockerfilemodel .
+
+      - name: Push Streamlit Docker Images
+        run: |
+          docker push ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }}
+          docker push ${{ env.REGISTRY }}/streamlit_app:latest
+
+      - name: Deploy Streamlit App to Cloud Run
+        run: |
+          gcloud run deploy streamlit-app \
+            --image ${{ env.REGISTRY }}/streamlit_app:latest \
+            --platform managed \
+            --region us-east1 \
+            --allow-unauthenticated \
+            --port 8080 \
+            --cpu 1 \
+            --memory 512Mi \
+            --verbosity=debug
+#

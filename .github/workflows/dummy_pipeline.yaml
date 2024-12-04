@@ -44,26 +44,23 @@ jobs:
         echo "Listing files in the Latest folder:"
         gsutil ls "$GCS_LATEST_PATH/"
 
-        # Move files from 'Latest' to 'Versioned' with their actual timestamp
+        # Move all files from 'Latest' to 'Versioned' with their name + timestamp
         echo "Moving files from Latest to Versioned..."
         for file in $(gsutil ls "$GCS_LATEST_PATH/"); do
-          # Ensure only files (not directories) are processed
-          if [[ $file != */ ]]; then
-            # Get file's actual timestamp from metadata
-            FILE_TIMESTAMP=$(gsutil stat "$file" | grep "Update time:" | awk '{print $3"-"$4}' | sed 's/[:-]//g' | sed 's/\..*//')
-            BASENAME=$(basename "$file")
+          # Get file's actual timestamp from metadata
+          FILE_TIMESTAMP=$(gsutil stat "$file" | grep "Update time:" | awk '{print $3"-"$4}' | sed 's/[:-]//g' | sed 's/\..*//')
+          BASENAME=$(basename "$file")
 
-            # Print file details before moving
-            echo "Processing file: $BASENAME at $FILE_TIMESTAMP"
+          # Print file details before moving
+          echo "Processing file: $BASENAME with timestamp: $FILE_TIMESTAMP"
 
-            # Move the file to the 'Versioned' folder with the actual timestamp in its name
-            gsutil mv "$file" "$GCS_VERSIONED_PATH/${BASENAME}_${FILE_TIMESTAMP}"
-          fi
+          # Move the file to the 'Versioned' folder with the actual timestamp in its name
+          gsutil mv "$file" "$GCS_VERSIONED_PATH/${BASENAME}_${FILE_TIMESTAMP}"
         done
 
         # Upload a text file from the repository to the 'Latest' folder
         echo "Uploading text file from repository to the Latest folder..."
-        gsutil cp "model/Filedummy - 3.txt" "$GCS_LATEST_PATH/Filedummy - 3.txt"
+        gsutil cp "model/Filedummy3.txt" "$GCS_LATEST_PATH/Filedummy3.txt"
         echo "GCS operations completed successfully."
 
     - name: Notify on Success

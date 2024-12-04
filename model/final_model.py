@@ -102,7 +102,7 @@ def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, target
 
     print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}")
 
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader
 
 # Custom ResNet18 Model
 class CustomResNet18(nn.Module):

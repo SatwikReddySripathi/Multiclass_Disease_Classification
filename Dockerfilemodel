@@ -1,19 +1,18 @@
-# Python image Dockerfile
-FROM python:3.8
+# Base Python image
+FROM python:3.8-slim
 
-# Install any necessary dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
-# Copy over the model_requirements and install
-COPY model_requirements.txt .
-RUN pip install --upgrade pip && pip install --no-cache-dir -r model_requirements.txt
-
-# Install google-cloud-storage library for GCS streaming
-RUN pip install --no-cache-dir google-cloud-storage
-
-# Create directories for scripts and metrics
+# Set the working directory
 WORKDIR /app
-COPY model/ model/
 
-# Run as the main entry point to be overridden by each GitHub Actions step
-CMD ["python", "model/model_development_refined.py"]
+# Copy requirements and install dependencies
+COPY model_requirements.txt ./
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r model_requirements.txt
+
+# Copy application files into the container
+COPY streamlit_application/ /app
+
+# Expose the Streamlit port
+EXPOSE 8080
+
+# Define the entry point for Streamlit
+CMD ["streamlit", "run", "deploy_streamlit.py", "--server.port=8080", "--server.address=0.0.0.0"]

@@ -28,6 +28,12 @@ import torch.nn.functional as F
 from torchvision import transforms
 from torch.utils.data import random_split, DataLoader, TensorDataset
 
+from google.cloud import storage
+import os
+import subprocess
+gcp_credentials_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = gcp_credentials_path
+
 best_params_file= "best_params.txt"
 train_preprocessed_data= "train_preprocessed_data.pkl"
 test_preprocessed_data= "test_preprocessed_data.pkl"
@@ -46,7 +52,7 @@ def combine_pickles(pickle_files):
 
     return combined_data
 
-def load_data(original_data_pickle, batch_size, train_percent, val_percent, target_size=(224, 224), seed= 42):
+def load_data_from_gcp(bucket_name, file_path, batch_size, train_percent, val_percent, target_size=(224, 224), seed= 42):
 
   torch.manual_seed(seed)
   np.random.seed(seed)
@@ -60,8 +66,16 @@ def load_data(original_data_pickle, batch_size, train_percent, val_percent, targ
       transforms.ToTensor()
   ])
 
-  with open(original_data_pickle, 'rb') as f:
-      data = pickle.load(f)
+  # Initialize GCP client and bucket
+    client = storage.Client()
+    bucket = client.get_bucket(bucket_name)
+    blob = bucket.blob(file_path)
+
+    # Read .pkl file from GCP
+    with blob.open("rb") as f:
+        data = pickle.load(f)
+  
+  
 
   for item in data.values():
 
@@ -216,6 +230,53 @@ def retrain_model(train_loader, val_loader, best_params):
   print(f"Retrained validation accuracy: {best_val_accuracy}")
   return model
 
+
+def save_model_as_torchscript(model_path, output_path):
+    # Load the trained model
+    model = torch.load(model_path)
+    model.eval()
+
+    # Create an example input for tracing (assuming the image size and demographic input)
+    image_tensor = torch.rand((1, 1, 224, 224))  # Example input for grayscale image
+    demographics_tensor = torch.rand((1, 3))  # Example demographic tensor ([gender_m, gender_f, age])
+
+    # Trace the model
+    traced_model = torch.jit.trace(model, (image_tensor, demographics_tensor))
+
+    # Save the traced model
+    traced_model.save(output_path)
+
+
+def create_torch_model_archive(model_name, version, serialized_file, model_file, handler, export):
+    """
+    Function to create a Torch model archive using the torch-model-archiver command.
+
+    Args:
+        model_name (str): The name of the model to be archived.
+        version (str): The version of the model.
+        serialized_file (str): The path to the serialized PyTorch model file (.jit).
+        handler (str): The path to the handler.py file.
+    """
+    try:
+        command = [
+            "torch-model-archiver",
+            "--model-name", model_name,
+            "--version", version,
+            "--serialized-file", serialized_file,
+            "--model-file", model_file,
+            "--handler", handler,
+            "--export-path", export
+        ]
+        
+        # Execute the command
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        print("Model archive created successfully:")
+        print(result.stdout.decode("utf-8"))
+    except subprocess.CalledProcessError as e:
+        print("Failed to create model archive:")
+        print(e.stderr.decode("utf-8"))
+
 if __name__ == "__main__":
 
   config = {
@@ -251,8 +312,10 @@ if __name__ == "__main__":
 
   print(f"Best Params: Epochs={num_epochs}, Batch Size={batch_size}, Learning Rate={learning_rate}, Demographics FC Size={demographics_fc_size}")
 
-  train_loader, val_loader = load_data(
-        original_data_pickle=config["combined_pickle"],
+  train_loader, val_loader = load_data_from_gcp(
+        bucket_name ="nih-dataset-mlops",
+        file_path="Data_Preprocessing_files/train_preprocessed_data.pkl",
+        #original_data_pickle=config["combined_pickle"],
         batch_size=best_params["batch_size"],
         train_percent=0.8,
         val_percent=0.2,
@@ -270,3 +333,36 @@ if __name__ == "__main__":
 
   torch.save(retrained_model, model_filename)
   print(f"Retrained model saved as {model_filename}")
+
+
+
+  if model is not None:
+    output_dir = "/app/model_output"
+    if not os.path.exists(output_dir):
+        logging.info("## Creating Directory")
+        os.makedirs(output_dir)
+
+    torch.save(best_model, os.path.join(output_dir, "best_model.pt"))
+    print(f"Model saved at {output_dir}/best_model.pt with accuracy: {best_val_accuracy}%")
+    save_model_as_torchscript(os.path.join(output_dir, "best_model.pt"), os.path.join(output_dir, "best_model.jit"))
+    print(f"Model saved at {output_dir}/best_model.jit")
+        
+    best_param_path = os.path.join(os.getcwd(),"model","best_params.txt")
+    with open(best_param_path,"w") as f:
+        f.write(f"Best validation accuracy: {best_val_accuracy}\n")
+        f.write(f"Parameters: {best_params}\n")
+        
+    
+    handler_path = os.path.join(os.getcwd(),"model","model_handler.py")
+    serialized_path = os.path.join(output_dir,"best_model.jit")
+    model_path = os.path.join(os.getcwd(),"model","model.py")
+    export_path = os.path.join(os.getcwd(),output_dir)
+    create_torch_model_archive(
+    model_name="model",
+    version="1.0",
+    serialized_file=serialized_path,
+    model_file=model_path, 
+    handler=handler_path,
+    export= export_path)
+    dummy_items = os.listdir(export_path)
+    return best_params

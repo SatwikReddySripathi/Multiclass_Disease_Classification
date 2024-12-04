@@ -772,9 +772,9 @@ import io
 
 def get_access_token():
     """Fetches the access token using the full path to gcloud."""
-    gcloud_path = r"C:\Users\SNR\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
+    #gcloud_path = r"C:\Users\SNR\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
     try:
-        token = subprocess.check_output([gcloud_path, "auth", "print-access-token"], stderr=subprocess.STDOUT).decode("utf-8").strip()
+        token = subprocess.check_output(["gcloud", "auth", "print-access-token"], stderr=subprocess.STDOUT).decode("utf-8").strip()
         print('Done')
         return token
     except subprocess.CalledProcessError as e:

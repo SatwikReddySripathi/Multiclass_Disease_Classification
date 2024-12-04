@@ -1,11 +1,5 @@
 name: Deploy model to Vertex AI
 on:
-  push:
-    branches:
-      - dhananjay_model
-  pull_request:
-    branches:
-      - dhananjay_model
   workflow_dispatch:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -42,14 +36,14 @@ jobs:
 
         # List files in the Latest folder
         echo "Listing files in the Latest folder:"
-        gsutil ls $GCS_LATEST_PATH/
+        gsutil ls "$GCS_LATEST_PATH/"
 
         # Move files from 'Latest' to 'Versioned' with their actual timestamp
         echo "Moving files from Latest to Versioned..."
-        for file in $(gsutil ls $GCS_LATEST_PATH/); do
+        for file in $(gsutil ls "$GCS_LATEST_PATH/"); do
           if [[ $file != */ ]]; then
             # Get file's actual timestamp from metadata
-            FILE_TIMESTAMP=$(gsutil stat $file | grep "Update time:" | awk '{print $3"-"$4}' | sed 's/[:-]//g' | sed 's/\..*//')
+            FILE_TIMESTAMP=$(gsutil stat "$file" | grep "Update time:" | awk '{print $3"-"$4}' | sed 's/[:-]//g' | sed 's/\..*//')
             BASENAME=$(basename "$file")
 
             # Print file details before moving

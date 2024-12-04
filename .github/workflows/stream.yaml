@@ -37,7 +37,7 @@ jobs:
         project_id: "${{ secrets.GCP_PROJECT_ID }}"
         install_components: beta
 
-    # Step 4: Build and Push Docker Image
+    # Step 4: Build and Push Docker Image.
     - name: Build and Push Docker Image
       run: |
         docker build -t $REGISTRY/$IMAGE_NAME:latest .

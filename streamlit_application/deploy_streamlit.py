@@ -772,9 +772,9 @@ import io
 
 def get_access_token():
     """Fetches the access token using the full path to gcloud."""
-    gcloud_path = r"C:\Users\SNR\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
+    #gcloud_path = r"C:\Users\SNR\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
     try:
-        token = subprocess.check_output([gcloud_path, "auth", "print-access-token"], stderr=subprocess.STDOUT).decode("utf-8").strip()
+        token = subprocess.check_output(["gcloud", "auth", "print-access-token"], stderr=subprocess.STDOUT).decode("utf-8").strip()
         print('Done')
         return token
     except subprocess.CalledProcessError as e:
@@ -813,9 +813,10 @@ if st.button("Predict"):
             image = Image.open(uploaded_image)
             processed_image = encode_image_to_base64(image)  
             st.image(image=image,width=150)
-            
+            st.write("This is the first debug statement")
             access_token = get_access_token()
-            
+            st.write("This is the second debug statement")
+
             payload = {
                 "instances": [
                     {
@@ -834,7 +835,7 @@ if st.button("Predict"):
 
 
             response = requests.post(endpoint_url2, json=payload, headers=headers)
-
+            st.write("This is the third debug statement")
             # Debug statements
             #print("Response:")
             #print(response.json())  
@@ -902,6 +903,7 @@ if st.button("Predict"):
 
 
         except Exception as e:
+
             st.error(f"Error: {e}")
     else:
         st.warning("Please upload an image.")

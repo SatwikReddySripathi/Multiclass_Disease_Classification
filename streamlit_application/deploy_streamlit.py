@@ -798,11 +798,6 @@ image_path = uploaded_file  # Replace with your image file path
 
 
 
-
-
-
-
-
 if st.button("Predict"):
     if uploaded_file:
         try:
@@ -889,79 +884,3 @@ if st.button("Predict"):
             st.error(f"Error: {e}")
     else:
         st.warning("Please upload an image.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-access_token = get_access_token()
-
-# Encode the image
-base64_image = encode_image_to_base64(image_path)
-
-# Prepare the payload
-payload = {
-    "instances": [
-        {
-            "data": base64_image,
-            "gender": gender,
-            "age": age
-        }
-    ]
-}
-
-# Set headers with the access token
-headers = {
-    "Authorization": f"Bearer {access_token}",
-    "Content-Type": "application/json"
-}
-
-# Send the POST request
-response = requests.post(endpoint_url2, json=payload, headers=headers)
-
-# Print the response
-print("Response:")
-print(response.json())

@@ -775,9 +775,10 @@ def get_access_token():
     #gcloud_path = r"C:\Users\SNR\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
     try:
         token = subprocess.check_output(["gcloud", "auth", "print-access-token"], stderr=subprocess.STDOUT).decode("utf-8").strip()
-        print('Done')
+        st.write('Done')
         return token
     except subprocess.CalledProcessError as e:
+        st.write('Error here')
         raise RuntimeError(f"Failed to fetch access token: {e.output.decode('utf-8')}")
 
 

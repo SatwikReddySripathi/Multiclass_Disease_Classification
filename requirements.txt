@@ -19,3 +19,6 @@ tensorflow-data-validation
 IPython
 torchmetrics
 ray[tune]
+requests
+base64
+subprocess

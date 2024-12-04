@@ -96,7 +96,7 @@ jobs:
         ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
         echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/$ENDPOINT_NAME:predict"
       
-    # Step 10: Streamlit Application Deployment
+    # Step 10: Streamlit Application Deployment.
     - name: Set up Python
       uses: actions/setup-python@v4
       with:

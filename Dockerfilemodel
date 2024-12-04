@@ -1,5 +1,5 @@
 # Base Python image
-FROM python:3.9-slim  # Upgrade Python version to 3.9 to match dependencies
+FROM python:3.9-slim
 
 # Install required system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -13,18 +13,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set the working directory
 WORKDIR /app
 
-# Copy the requirements file
+# Copy the requirements file and install dependencies
 COPY model_requirements.txt /requirements.txt
-
-# Upgrade pip and install dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r /requirements.txt
 
-# Copy application files
-COPY streamlit_application/ /app
+# Copy application files into the container
+COPY model/ /app
 
 # Expose the Streamlit port
 EXPOSE 8080
 
-# Command to run Streamlit app
-CMD ["streamlit", "run", "deploy_streamlit.py", "--server.port=8080", "--server.address=0.0.0.0"]
+# Command to run the Python script or app (can be overridden in GitHub Actions)
+CMD ["python", "model/model_development_refined.py"]

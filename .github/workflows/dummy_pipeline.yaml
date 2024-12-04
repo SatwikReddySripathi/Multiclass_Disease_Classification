@@ -58,7 +58,7 @@ jobs:
 
           # Upload a text file from the repository to the 'latest' folder
           echo "Uploading text file from repository to the latest folder..."
-          gsutil cp model/Filedummy - 3.txt $GCS_LATEST_PATH/textfile.tx
+          gsutil cp model/Filedummy - 3.txt $GCS_LATEST_PATH/Filedummy - 3.txt
           echo "GCS operations completed successfully."
           
     - name: Notify on Success

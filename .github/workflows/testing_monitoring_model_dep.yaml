@@ -85,9 +85,8 @@ jobs:
       - name: Deploy Model to Endpoint
         run: |
           echo "Deploying model $MODEL_ID to endpoint $ENDPOINT_NAME..."
-          gcloud ai endpoints deploy-model $ENDPOINT_NAME --region=us-east1 --model=$MODEL_ID --display-name=gitmodelendpoint-deployment --machine-type=n1-standard-2 --traffic-split=0=100 --enable-access-logging
-          gcloud ai endpoints update $ENDPOINT_NAME --region=us-east1 update-mask=deployed_models[0].model_logging deployed-models[0].model-logging.enabled=true
-
+          gcloud ai endpoints deploy-model $ENDPOINT_NAME --region=us-east1 --model=$MODEL_ID --display-name=gitmodelendpoint-deployment --machine-type=n1-standard-2 --traffic-split=0=100 --enable-access-logging --logging-sample-rate=1.0
+      #         gcloud ai endpoints update $ENDPOINT_NAME --region=us-east1 update-mask=deployed_models[0].model_logging deployed-models[0].model-logging.enabled=true
       - name: Get Endpoint URI
         run: |
           GCP_PROJECT_ID='812555529114'

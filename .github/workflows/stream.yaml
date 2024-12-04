@@ -10,12 +10,12 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-  IMAGE_NAME: "ml-model-image"
-  REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models-new"
+  IMAGE_NAME: "streamlit-app-image"
+  REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-apps"
   GCS_BUCKET: "nih-dataset-mlops"
 
 jobs:
-  deploy-to-vertex-ai:
+  deploy-to-cloud-run:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,42 +23,31 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-
-    #Google Cloud Authentication
-    - id: 'auth'
-      name: 'Authenticate to Google Cloud'
-      uses: 'google-github-actions/auth@v1'
+    # Step 2: Authenticate with Google Cloud
+    - id: auth
+      name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
       with:
-          credentials_json: "${{ secrets.GCP_SA_KEY }}"
-      
-    - name: 'Set up Cloud SDK'
-      uses: 'google-github-actions/setup-gcloud@v1'      
+        credentials_json: "${{ secrets.GCP_SA_KEY }}"
 
-   
-
-
-     
-    # Step 9: Get Endpoint URI
-    - name: Get Endpoint URI
-      run: |
-        GCP_PROJECT_ID='812555529114'
-        REGION="us-east1"
-        ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
-        echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/$ENDPOINT_NAME:predict"
-      
-    # Step 10: Streamlit Application Deployment.
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    # Step 3: Set up gcloud CLI
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
       with:
-        python-version: '3.8'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install streamlit torch torchvision pillow requests
+        project_id: "${{ secrets.GCP_PROJECT_ID }}"
+        install_components: beta
 
-    - name: Deploy/Run Streamlit App
+    # Step 4: Build and Push Docker Image
+    - name: Build and Push Docker Image
       run: |
-        streamlit run streamlit_application/deploy_streamlit.py
-      env:
-        PORT: 8501
+        docker build -t $REGISTRY/$IMAGE_NAME:latest .
+        docker push $REGISTRY/$IMAGE_NAME:latest
+
+    # Step 5: Deploy to Cloud Run
+    - name: Deploy to Cloud Run
+      run: |
+        gcloud run deploy streamlit-app \
+          --image $REGISTRY/$IMAGE_NAME:latest \
+          --platform managed \
+          --region us-east1 \
+          --allow-unauthenticated

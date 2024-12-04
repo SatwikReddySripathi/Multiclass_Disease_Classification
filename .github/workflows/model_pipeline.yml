@@ -34,26 +34,20 @@ jobs:
       uses: 'google-github-actions/setup-gcloud@v1'      
 
     # Step 4: Create a model in Vertex AI Model Registry
-    - name: Create or check for Existing Model Registry in Vertex AI
+    - name: Create Model Registry in Vertex AI
       id: create-model
       run: |
         MODEL_NAME="gitmodel"
         REGION="us-east1"
         MODEL_URI="gs://nih-dataset-mlops/Testing"
-        echo "Checking if model exists in Vertex AI Model Registry..."
-        MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
 
-        if [ -z "$MODEL_ID" ]; then
-          echo "Model does not exist. Creating a new model..."
-          gcloud ai models upload \
-            --region=$REGION \
-            --display-name=$MODEL_NAME \
-            --artifact-uri=$MODEL_URI \
-            --container-image-uri=us-docker.pkg.dev/vertex-ai/prediction/pytorch-cpu.2-1:latest
-          MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
-        else
-          echo "Model already exists: $MODEL_ID"
-        fi
+        gcloud ai models upload \
+          --region=$REGION \
+          --display-name=$MODEL_NAME \
+          --artifact-uri=$MODEL_URI \
+          --container-image-uri=us-docker.pkg.dev/vertex-ai/prediction/pytorch-cpu.2-1:latest
+
+        MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
         echo "MODEL_ID=$MODEL_ID"
         echo "MODEL_ID=$MODEL_ID" >> $GITHUB_ENV
           
@@ -90,7 +84,5 @@ jobs:
     # Step 6: Get Endpoint URI
     - name: Get Endpoint URI
       run: |
-        GCP_PROJECT_ID='812555529114'
-        REGION="us-east1"
         ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
         echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/$ENDPOINT_NAME:predict"

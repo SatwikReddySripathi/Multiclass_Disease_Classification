@@ -109,6 +109,6 @@ jobs:
 
     - name: Deploy/Run Streamlit App
       run: |
-        streamlit run deploy_streamlit.py
+        streamlit run .\streamlit_application\deploy_streamlit.py
       env:
         PORT: 8501

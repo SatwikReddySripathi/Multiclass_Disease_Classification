@@ -21,7 +21,7 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: ${{ secrets.GCP_PROJECT }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
@@ -37,7 +37,7 @@ jobs:
     needs: deploy-endpoint
 
     env:
-      REGISTRY: "us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/streamlit-repo"
+      REGISTRY: "us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/streamlit-repo"
       IMAGE_TAG: ${{ github.sha }}
 
     permissions:
@@ -51,7 +51,7 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: ${{ secrets.GCP_PROJECT }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1

@@ -6,8 +6,6 @@ import torch.nn as nn
 from torchvision import models
 import streamlit as st
 
-
-
 class CustomResNet18(nn.Module):
     def __init__(self, demographic_fc_size, num_demographics, num_classes=15):
         super(CustomResNet18, self).__init__()

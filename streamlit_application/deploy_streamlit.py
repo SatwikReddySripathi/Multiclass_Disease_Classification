@@ -5,6 +5,13 @@ from PIL import Image
 import torch.nn as nn
 from torchvision import models
 import streamlit as st
+import base64
+import requests
+import subprocess  
+from io import BytesIO
+import io
+from google.auth import default
+from google.auth.transport.requests import Request
 
 class CustomResNet18(nn.Module):
     def __init__(self, demographic_fc_size, num_demographics, num_classes=15):
@@ -761,18 +768,11 @@ DISEASE_INFO = {
 
 
 
-import base64
-import requests
-import subprocess  
-from io import BytesIO
-import io
-from google.auth import default
-from google.auth.transport.requests import Request
-
 def get_access_token():
     credentials, _ = default()
     credentials.refresh(Request())
     return credentials.token
+
 
 
 def encode_image_to_base64(image):
@@ -786,11 +786,35 @@ def encode_image_to_base64(image):
 # Parameters
 #endpoint_url = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5963526768684957696:predict"
 endpoint_url2 = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5472634409301573632:predict"
+
+
+
+
+# Initialize session state variables
+if "step" not in st.session_state:
+    st.session_state.step = "input"
 if "feedback" not in st.session_state:
     st.session_state.feedback = None
 if "selected_disease" not in st.session_state:
     st.session_state.selected_disease = None
+if "restart" not in st.session_state:
+    st.session_state.restart = False
+if "uploaded_image" not in st.session_state:
+    st.session_state.uploaded_image = None
+if "file_uploader_visible" not in st.session_state:
+    st.session_state.file_uploader_visible = True
 
+if st.session_state.restart:
+    # Reset all session states
+    st.session_state.step = "input"
+    st.session_state.feedback = None
+    st.session_state.selected_disease = None
+    st.session_state.restart = False
+    st.session_state.uploaded_image = None
+    st.session_state.file_uploader_visible = True
+    st.rerun()
+
+# Title and instructions
 st.title("ThorAIx - Disease Prediction")
 st.write("Upload an X-ray image and provide demographic details.")
 
@@ -802,15 +826,22 @@ else:
 
 age = st.number_input("Enter Age", min_value=0, max_value=120, step=1, value=50)
 
-uploaded_image = st.file_uploader("Upload an X-ray Image", type=["png", "jpg", "jpeg"])
 
-if st.button("Predict"):
+if st.session_state.file_uploader_visible:
+    uploaded_image = st.file_uploader("Upload an X-ray Image", type=["png", "jpg", "jpeg"])
     if uploaded_image:
-        try:
-            st.write('The following is the uploaded Image')
-            image = Image.open(uploaded_image)
+        st.session_state.uploaded_image = uploaded_image
+        st.session_state.file_uploader_visible = False
+# Step 1: Input and Prediction
+if st.session_state.step == "input":
+    if st.session_state.uploaded_image:
+        # Show the uploaded image
+        st.image(st.session_state.uploaded_image, caption="Uploaded X-ray Image", use_column_width=150)
+
+        # Predict button
+        if st.button("Predict"):
+            image = Image.open(st.session_state.uploaded_image)
             processed_image = encode_image_to_base64(image)  
-            st.image(image=image,width=150)
             #st.write("This is the first debug statement")
             access_token = get_access_token()
             #st.write("This is the second debug statement")
@@ -844,111 +875,81 @@ if st.button("Predict"):
             prediction_probs = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
             print(prediction_probs)
             top_predictions = sorted(prediction_probs, key=lambda x: x[1], reverse=True)[:3]
+            st.session_state.predictions = top_predictions
+            st.session_state.step = "results"
 
-            st.write("### Probabile Diseases:")
-            for idx, (disease_id, probability) in enumerate(top_predictions, start=1):
-                disease_name = DISEASE_INFO.get(disease_id, {}).get("name", "No Finding Present")
-                disease = DISEASE_INFO.get(disease_id, {})
-                
-                st.subheader(f"**{idx}. {disease_name}** ")
-                
-                if disease_id != 'No Finding':
-                    st.image(disease.get("image"), caption=disease.get("name"), width=450)
-                    st.subheader("Description")
-                    st.write(disease.get("description"))
-                    st.subheader("Symptoms")
-                    st.write("- " + "\n- ".join(disease.get("symptoms")))
+# Step 2: Show Predictions and Collect Feedback
+if st.session_state.step == "results":
+    st.write("### Top Predicted Diseases:")
+    for idx, (disease_id, prob) in enumerate(st.session_state.predictions, 1):
+        disease_info = DISEASE_INFO.get(disease_id, {})
+        disease = DISEASE_INFO.get(disease_id, {})
+        st.subheader(f"{idx}. {disease_id} ({prob * 100:.2f}%)")
+        if disease_id != 'No Finding':
+            st.image(disease.get("image"), caption=disease.get("name"), width=450)
+            st.subheader("Description")
+            st.write(disease.get("description"))
+            st.subheader("Symptoms")
+            st.write("- " + "\n- ".join(disease.get("symptoms")))
 
-                    st.subheader("Causes")
-                    st.write("- " + "\n- ".join(disease.get("causes")))
+            st.subheader("Causes")
+            st.write("- " + "\n- ".join(disease.get("causes")))
 
-                    st.subheader("Detailed Causes")
-                    for cause_type, details in disease.get("causes_details").items():
-                        st.write(f"**{cause_type}:**")
-                        st.write("- " + "\n- ".join(details))
+            st.subheader("Detailed Causes")
+            for cause_type, details in disease.get("causes_details").items():
+                st.write(f"**{cause_type}:**")
+                st.write("- " + "\n- ".join(details))
 
-                    st.subheader("Risk Factors")
-                    st.write("- " + "\n- ".join(disease.get("risk_factors")))
+            st.subheader("Risk Factors")
+            st.write("- " + "\n- ".join(disease.get("risk_factors")))
 
-                    st.subheader("Complications")
-                    st.write("- " + "\n- ".join(disease.get("complications")))
+            st.subheader("Complications")
+            st.write("- " + "\n- ".join(disease.get("complications")))
 
-                    st.subheader("Prevention")
-                    st.write("- " + "\n- ".join(disease.get("prevention")))
+            st.subheader("Prevention")
+            st.write("- " + "\n- ".join(disease.get("prevention")))
 
 
-                    st.markdown(
-    """
-    <div style="position: fixed; bottom: 0; right: 0; font-size: 12px; text-align: right; margin: 10px; color: gray;">
-        Information provided by <a href="https://www.clevelandclinic.org" target="_blank">Cleveland Clinic</a>, <a href="https://www.mayoclinic.org/" target="_blank">Mayo Clinic</a>  and other reputable sources. Images are used for educational purposes only.
-    </div>
-    """,
-    unsafe_allow_html=True
-)                   
-            if st.button("Correctly Predicted"):
-                st.session_state.feedback = "Thank you for the feedback! The prediction was correct."
-                st.success(st.session_state.feedback)
+            st.markdown(
+                        """
+                        <div style="position: fixed; bottom: 0; right: 0; font-size: 12px; text-align: right; margin: 10px; color: gray;">
+                            Information provided by <a href="https://www.clevelandclinic.org" target="_blank">Cleveland Clinic</a>, <a href="https://www.mayoclinic.org/" target="_blank">Mayo Clinic</a>  and other reputable sources. Images are used for educational purposes only.
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                        )                   
+                                
 
-            if st.button("Incorrect Predictions"):
-                try:
-                    st.write("Please select the correct disease prediction:")
-                    
-                    # List of disease options
-                    disease_options = [
-                        "No Disease",
-                        "Atelectasis",
-                        "Cardiomegaly",
-                        "Effusion",
-                        "Infiltration",
-                        "Lung Mass",
-                        "Nodule",
-                        "Pneumonia",
-                        "Pneumothorax",
-                        "Pulmonary Consolidation",
-                        "Pulmonary Edema",
-                        "Emphysema",
-                        "Pulmonary Fibrosis",
-                        "Pleural Thickening",
-                        "Hernia",
-                    ]
+    st.subheader("Please provide feedback on the predictions")                  
+    st.write(" Please select on of the 2 options and proceed further for the feedback")
+    # Feedback buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Correctly Predicted"):
+            st.session_state.feedback = "Thank you for your feedback! The prediction was correct, we have updated the following into our model"
+            st.session_state.step = "thank_you"
+    with col2:
+        if st.button("Incorrect Predictions"):
+            st.session_state.step = "incorrect"
 
-                    # Dropdown (selectbox) for disease selection
-                    st.session_state.selected_disease = st.selectbox(
-                        "Select the correct disease", 
-                        disease_options, 
-                        index=0 if st.session_state.selected_disease is None else disease_options.index(st.session_state.selected_disease)
-                    )
+# Step 3: Handle Incorrect Predictions
+if st.session_state.step == "incorrect":
+    st.write("Please select the correct disease prediction:")
+    disease_options = list(DISEASE_INFO.keys())
+    st.session_state.selected_disease = st.selectbox(
+        "Select the correct disease",
+        disease_options,
+        index=0 if st.session_state.selected_disease is None else disease_options.index(st.session_state.selected_disease),
+    )
+    if st.button("Confirm Selection"):
+        st.session_state.feedback = f"Thank you! As provided in the feedback the correct disease '{st.session_state.selected_disease}' , has been updated into our model"
+        st.session_state.step = "thank_you"
 
-                    # Confirm the disease selection
-                    if st.button("Confirm Selection"):
-                        st.session_state.feedback = f"Updating the model with '{st.session_state.selected_disease}'"
-                        st.write(f"Thank you for the information. Updating this image as '{st.session_state.selected_disease}' into the model.")
-                        # Call the retrain pipeline code here
-                        # Example: retrain_model(image, st.session_state.selected_disease, gender, age)
-
-                except Exception as e:
-                    st.error(f"Error: {e}")
-
-            # Feedback display
-            if st.session_state.feedback:
-                st.success(st.session_state.feedback)
-
-            # Additional Info for "No Disease Detected" (Optional)
-            if st.session_state.selected_disease == "No Disease":
-                st.subheader("No Disease Detected")
-                st.write(
-                    "Great news! Based on the analysis of the provided image, our model has not detected any abnormalities. "
-                    "This does not guarantee the absence of health issues, and if you are experiencing any symptoms or have health concerns, "
-                    "we recommend consulting a healthcare professional for a thorough evaluation."
-                )
-                st.write(
-                    "Remember, regular checkups and a healthy lifestyle are the best ways to maintain your well-being. "
-                    "This prediction is for informational purposes only and should not be considered a substitute for professional medical advice."
-                )
-
-        except Exception as e:
-
-            st.error(f"Error: {e}")
-    else:
-        st.warning("Please upload an image.")
-    st.subheader("Please provide feedback for the Prediicitons")
+# Step 4: Thank You Message
+if st.session_state.step == "thank_you":
+    st.success(st.session_state.feedback)
+    #st.write("Your feedback has been recorded. Thank you for helping us improve our model!")
+    if st.button("Restart"):
+        st.session_state.restart = True
+        st.session_state.uploaded_image = None
+        st.rerun()

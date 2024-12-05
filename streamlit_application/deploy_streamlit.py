@@ -906,7 +906,7 @@ if st.button("Predict"):
     if st.button("Correctly Predicted"):
         st.write("Thnk you for the feedback")
         # retrain pipeline
-    elif st.button("Incorrect Predictions"):
+    if st.button("Incorrect Predictions"):
         try:
             st.write("Please select Correct Disease Prediction")
             if st.button("No Disease"):

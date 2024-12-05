@@ -3,7 +3,7 @@ name: Nightly Retraining Job
 on:
   workflow_dispatch: # Allows manual trigger
   schedule:
-    - cron: '0 2 * * *' # Schedule to run at 2 AM UTC daily (adjust as needed)
+    - cron: '0 12 * * *' # Schedule to run at 2 AM UTC daily (adjust as needed)
 
 jobs:
   run-script:

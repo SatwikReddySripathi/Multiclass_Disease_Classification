@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageStat
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
@@ -767,7 +767,6 @@ DISEASE_INFO = {
 }
 
 
-
 def get_access_token():
     credentials, _ = default()
     credentials.refresh(Request())
@@ -786,6 +785,36 @@ def encode_image_to_base64(image):
 # Parameters
 #endpoint_url = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5963526768684957696:predict"
 endpoint_url2 = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5472634409301573632:predict"
+
+# Brightness thresholds
+BRIGHTNESS_MIN = 50  # Minimum acceptable brightness
+BRIGHTNESS_MAX = 200  # Maximum acceptable brightness
+
+
+def calculate_brightness(image):
+    """Calculate the average brightness of an image."""
+    grayscale_image = image.convert("L")  # Convert to grayscale
+    stat = ImageStat.Stat(grayscale_image)
+    return stat.mean[0]  # Return the mean pixel value
+
+
+def validate_image(image):
+    """
+    Validate the uploaded image:
+    - Check brightness.
+    - Ensure it looks like an X-ray (basic grayscale check).
+    """
+    # Calculate brightness
+    brightness = calculate_brightness(image)
+
+    # Check if the brightness is within acceptable range
+    if brightness < BRIGHTNESS_MIN:
+        return False, f"The image is too dark (brightness: {brightness:.2f}). Please upload a clearer X-ray image."
+    elif brightness > BRIGHTNESS_MAX:
+        return False, f"The image is too bright (brightness: {brightness:.2f}). Please upload a properly exposed X-ray image."
+
+    # Additional validation checks can be added here (e.g., X-ray classification).
+    return True, "Image is valid for prediction."
 
 
 
@@ -837,46 +866,57 @@ if st.session_state.step == "input":
     if st.session_state.uploaded_image:
         # Show the uploaded image
         st.image(st.session_state.uploaded_image, caption="Uploaded X-ray Image", use_column_width=150)
+        image = Image.open(st.session_state.uploaded_image)
 
-        # Predict button
-        if st.button("Predict"):
-            image = Image.open(st.session_state.uploaded_image)
-            processed_image = encode_image_to_base64(image)  
-            #st.write("This is the first debug statement")
-            access_token = get_access_token()
-            #st.write("This is the second debug statement")
+        is_valid, validation_message = validate_image(image)
+        if not is_valid:
+            st.error(validation_message)
+            if st.button("Upload a New Image"):
+                st.session_state.file_uploader_visible = True
+                st.session_state.uploaded_image = None
+                st.rerun()
+        else:
+            st.success(validation_message)
 
-            payload = {
-                "instances": [
-                    {
-                        "data": processed_image,
-                        "gender": gender,
-                        "age": age
-                    }
-                ]
-            }
+            # Predict button
+            if st.button("Predict"):
+                image = Image.open(st.session_state.uploaded_image)
+                processed_image = encode_image_to_base64(image)  
+                #st.write("This is the first debug statement")
+                access_token = get_access_token()
+                #st.write("This is the second debug statement")
 
-            print("\n\n\n",access_token)
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json"
-            }
+                payload = {
+                    "instances": [
+                        {
+                            "data": processed_image,
+                            "gender": gender,
+                            "age": age
+                        }
+                    ]
+                }
+
+                print("\n\n\n",access_token)
+                headers = {
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json"
+                }
 
 
-            response = requests.post(endpoint_url2, json=payload, headers=headers)
-            #st.write("This is the third debug statement")
-            # Debug statements
-            #print("Response:")
-            #print(response.json())  
-            
-            response_data = response.json()  
-            predictions = response_data.get('predictions', [])[0]  
+                response = requests.post(endpoint_url2, json=payload, headers=headers)
+                #st.write("This is the third debug statement")
+                # Debug statements
+                #print("Response:")
+                #print(response.json())  
+                
+                response_data = response.json()  
+                predictions = response_data.get('predictions', [])[0]  
 
-            prediction_probs = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
-            print(prediction_probs)
-            top_predictions = sorted(prediction_probs, key=lambda x: x[1], reverse=True)[:3]
-            st.session_state.predictions = top_predictions
-            st.session_state.step = "results"
+                prediction_probs = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
+                print(prediction_probs)
+                top_predictions = sorted(prediction_probs, key=lambda x: x[1], reverse=True)[:3]
+                st.session_state.predictions = top_predictions
+                st.session_state.step = "results"
 
 # Step 2: Show Predictions and Collect Feedback
 if st.session_state.step == "results":
@@ -926,7 +966,7 @@ if st.session_state.step == "results":
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Correctly Predicted"):
-            st.session_state.feedback = "Thank you for your feedback! The prediction was correct, we have updated the following into our model"
+            st.session_state.feedback = "Thank you for your feedback!"
             st.session_state.step = "thank_you"
     with col2:
         if st.button("Incorrect Predictions"):
@@ -942,7 +982,7 @@ if st.session_state.step == "incorrect":
         index=0 if st.session_state.selected_disease is None else disease_options.index(st.session_state.selected_disease),
     )
     if st.button("Confirm Selection"):
-        st.session_state.feedback = f"Thank you! As provided in the feedback the correct disease '{st.session_state.selected_disease}' , has been updated into our model"
+        st.session_state.feedback = f"Thank you! As provided in the feedback "
         st.session_state.step = "thank_you"
 
 # Step 4: Thank You Message

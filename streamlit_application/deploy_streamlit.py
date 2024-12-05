@@ -782,6 +782,7 @@ def encode_image_to_base64(image):
     img_bytes = buffered.getvalue()  
     image_base64 = base64.b64encode(img_bytes).decode('utf-8')  
     return image_base64
+
 # Parameters
 #endpoint_url = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5963526768684957696:predict"
 endpoint_url2 = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5472634409301573632:predict"

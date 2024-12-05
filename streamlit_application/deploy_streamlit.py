@@ -785,7 +785,8 @@ def get_access_token():
         return token
     except subprocess.CalledProcessError as e:
         st.write('Error here')
-        raise RuntimeError(f"Failed to fetch access token: {e.output.decode('utf-8')}")"""
+        raise RuntimeError(f"Failed to fetch access token: {e.output.decode('utf-8')}")
+"""
 
 
 def encode_image_to_base64(image):

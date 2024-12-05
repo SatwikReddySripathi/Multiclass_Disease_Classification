@@ -20,7 +20,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
 pickle_file_path = 'demographics_stats_for_dummy.pkl'
-final_model_path = 'final_model.pth'
+final_model_path = 'new_best_model.pt'
 
 one_hot_encoding = {
     'No Finding': 0,
@@ -90,20 +90,20 @@ class CustomResNet18(nn.Module):
 
 def load_model_and_preprocessors(pickle_path, model_path, device):
 
-    with open(pickle_path, 'rb') as f:
-        data = pickle.load(f)
+  with open(pickle_path, 'rb') as f:
+      data = pickle.load(f)
 
-    age_scaler = data['age_scaler']
-    gender_encoder = data['gender_encoder']
+  age_scaler = data['age_scaler']
+  gender_encoder = data['gender_encoder']
 
-    model = CustomResNet18(demographics_fc_size,
-                           num_demographics=config["num_demographics"],
-                           num_classes=config["num_classes"])
-    model.load_state_dict(torch.load(model_path))
-    model.to(device)
-    model.eval()
+  model = CustomResNet18(demographics_fc_size,
+                          num_demographics=config["num_demographics"],
+                          num_classes=config["num_classes"])
+  model = torch.load(model_path, map_location=device)
+  model.to(device)
+  model.eval()
 
-    return age_scaler, gender_encoder, model
+  return age_scaler, gender_encoder, model
 
 def preprocess_inputs(images_data, ages, genders, age_scaler, gender_encoder, target_size=(224, 224)):
 
@@ -145,19 +145,24 @@ def evaluate_model(test_loader, model, device, confidence=0.3):
 
     predictions = torch.cat(predictions, dim=0)
     probabilities_list = torch.cat(probabilities_list, dim=0)
-    return predictions, probabilities_list
+    confidence_scores = probabilities_list.numpy().tolist()
 
-def decode_predictions(predictions, one_hot_encoding):
+    return predictions, probabilities_list, confidence_scores
+
+def decode_predictions(predictions, probabilities, one_hot_encoding, threshold= 0.3):
     index_to_label = {v: k for k, v in one_hot_encoding.items()}
     predictions_list = predictions.cpu().numpy().tolist()
+    probabilities_list = probabilities.cpu().numpy().tolist()
 
-    predicted_labels = []
-    for sample in predictions_list:
-        predicted_indices = [i for i, value in enumerate(sample) if value == 1]
-        labels = [index_to_label[idx] for idx in predicted_indices]
-        predicted_labels.append(labels)
+    predicted_labels_with_confidences = []
+    for sample_pred, sample_prob in zip(predictions_list, probabilities_list):
+        predicted_indices = [i for i, value in enumerate(sample_pred) if value == 1]
+        labels_with_confidences = [
+            (index_to_label[idx], sample_prob[idx]) for idx in predicted_indices if sample_prob[idx] >= threshold
+        ]
+        predicted_labels_with_confidences.append(labels_with_confidences)
 
-    return predicted_labels
+    return predicted_labels_with_confidences
 
 def run_pipeline(pickle_file_path, model_path, uploaded_files):
 
@@ -171,11 +176,17 @@ def run_pipeline(pickle_file_path, model_path, uploaded_files):
 
     test_loader = create_test_loader(image_tensors, demographic_tensors)
 
-    predictions, probabilities = evaluate_model(test_loader, model, device)
+    predictions, probabilities, confidence_scores = evaluate_model(test_loader, model, device)
 
-    predicted_labels = decode_predictions(predictions, one_hot_encoding)
-    for i, labels in enumerate(predicted_labels):
-        print(f"Sample {i + 1}: Predicted Diseases: {', '.join(labels) if labels else 'No Findings'}")
+    predicted_labels_with_confidences = decode_predictions(predictions, probabilities, one_hot_encoding)
+
+    for i, labels_with_confidences in enumerate(predicted_labels_with_confidences):
+        if labels_with_confidences:
+            print(f"Sample {i + 1}: Predicted Diseases:")
+            for label, confidence in labels_with_confidences:
+                print(f"  - {label} (Confidence: {confidence:.2f})")
+        else:
+            print(f"Sample {i + 1}: No Findings")
 
 uploaded_files = files.upload()
 run_pipeline(pickle_file_path, final_model_path, uploaded_files)

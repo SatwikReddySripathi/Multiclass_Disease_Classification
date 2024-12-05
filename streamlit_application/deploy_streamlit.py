@@ -768,10 +768,17 @@ import requests
 import subprocess  
 from io import BytesIO
 import io
-
+from google.auth import default
+from google.auth.transport.requests import Request
 
 def get_access_token():
-    """Fetches the access token using the full path to gcloud."""
+    credentials, _ = default()
+    credentials.refresh(Request())
+    return credentials.token
+
+"""
+def get_access_token():
+    #Fetches the access token using the full path to gcloud.
     #gcloud_path = r"C:\Users\SNR\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
     st.write('Entered the get_access_token')
     try:
@@ -780,7 +787,7 @@ def get_access_token():
         return token
     except subprocess.CalledProcessError as e:
         st.write('Error here')
-        raise RuntimeError(f"Failed to fetch access token: {e.output.decode('utf-8')}")
+        raise RuntimeError(f"Failed to fetch access token: {e.output.decode('utf-8')}")"""
 
 
 def encode_image_to_base64(image):

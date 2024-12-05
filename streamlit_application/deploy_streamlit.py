@@ -881,7 +881,77 @@ if st.button("Predict"):
     </div>
     """,
     unsafe_allow_html=True
-)
+)                   
+            if st.button("Correctly Predicted"):
+                st.write("Thank you for the feedback")
+                # retrain pipeline
+            if st.button("Incorrect Predictions"):
+                try:
+                    st.write("Please select Correct Disease Prediction")
+                    if st.button("No Disease"):
+                        st.write("Thank you for the information, Updating this image as No Disease into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Atelectasis"):
+                        st.write("Thank you for the information, Updating this image as Atelectasis into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Cardiomegaly"):
+                        st.write("Thank you for the information, Updating this image as Cardiomegaly into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Effusion"):
+                        st.write("Thank you for the information, Updating this image as Effusion into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Infiltration"):
+                        st.write("Thank you for the information, Updating this image as Infiltration into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Lung Mass"):
+                        st.write("Thank you for the information, Updating this image as Lung Mass into the model")
+                        #call the retrain pipeline code #Mass
+                        #give hte image, gender, age into it
+                    elif st.button("Nodule"):
+                        st.write("Thank you for the information, Updating this image as Nodule into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Pneumonia"):
+                        st.write("Thank you for the information, Updating this image as Pneumonia into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Pneumothorax"):
+                        st.write("Thank you for the information, Updating this image as Pneumothorax into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Pulmonary Consolidation"):
+                        st.write("Thank you for the information, Updating this image as Pulmonary Consolidation into the model")
+                        #call the retrain pipeline code #Consolidation
+                        #give hte image, gender, age into it
+                    elif st.button("Pulmonary Edema"):
+                        st.write("Thank you for the information, Updating the image as Pulmonary Edema into the model")
+                        #call the retrain pipeline code #Edma
+                        #give hte image, gender, age into it
+                    elif st.button("Emphysema"):
+                        st.write("Thank you for the information, Updating the image as Emphysema into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                    elif st.button("Pulmonary Fibrosis"):
+                        st.write("Thank you for the information, Updating the image as Pulmonary Fibrosis into the model")
+                        #call the retrain pipeline code # Fibrosis
+                        #give hte image, gender, age into it
+                    elif st.button("Pleural Thickening"):
+                        st.write("Thank you for the information, Updating the image as Pleural Thickening into the model")
+                        #call the retrain pipeline code #Pleural_Thickening
+                        #give hte image, gender, age into it
+                    elif st.button("Hernia"):
+                        st.write("Thank you for the information, Updating the image as Hernia into the model")
+                        #call the retrain pipeline code
+                        #give hte image, gender, age into it
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+
 
                 else:
                     st.subheader("No Disease Detected")
@@ -903,73 +973,3 @@ if st.button("Predict"):
     else:
         st.warning("Please upload an image.")
     st.subheader("Please provide feedback for the Prediicitons")
-    if st.button("Correctly Predicted"):
-        st.write("Thnk you for the feedback")
-        # retrain pipeline
-    if st.button("Incorrect Predictions"):
-        try:
-            st.write("Please select Correct Disease Prediction")
-            if st.button("No Disease"):
-                st.write("Thank you for the information, Updating this image as No Disease into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Atelectasis"):
-                st.write("Thank you for the information, Updating this image as Atelectasis into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Cardiomegaly"):
-                st.write("Thank you for the information, Updating this image as Cardiomegaly into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Effusion"):
-                st.write("Thank you for the information, Updating this image as Effusion into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Infiltration"):
-                st.write("Thank you for the information, Updating this image as Infiltration into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Lung Mass"):
-                st.write("Thank you for the information, Updating this image as Lung Mass into the model")
-                #call the retrain pipeline code #Mass
-                #give hte image, gender, age into it
-            elif st.button("Nodule"):
-                st.write("Thank you for the information, Updating this image as Nodule into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Pneumonia"):
-                st.write("Thank you for the information, Updating this image as Pneumonia into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Pneumothorax"):
-                st.write("Thank you for the information, Updating this image as Pneumothorax into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Pulmonary Consolidation"):
-                st.write("Thank you for the information, Updating this image as Pulmonary Consolidation into the model")
-                #call the retrain pipeline code #Consolidation
-                #give hte image, gender, age into it
-            elif st.button("Pulmonary Edema"):
-                st.write("Thank you for the information, Updating the image as Pulmonary Edema into the model")
-                #call the retrain pipeline code #Edma
-                #give hte image, gender, age into it
-            elif st.button("Emphysema"):
-                st.write("Thank you for the information, Updating the image as Emphysema into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-            elif st.button("Pulmonary Fibrosis"):
-                st.write("Thank you for the information, Updating the image as Pulmonary Fibrosis into the model")
-                #call the retrain pipeline code # Fibrosis
-                #give hte image, gender, age into it
-            elif st.button("Pleural Thickening"):
-                st.write("Thank you for the information, Updating the image as Pleural Thickening into the model")
-                #call the retrain pipeline code #Pleural_Thickening
-                #give hte image, gender, age into it
-            elif st.button("Hernia"):
-                st.write("Thank you for the information, Updating the image as Hernia into the model")
-                #call the retrain pipeline code
-                #give hte image, gender, age into it
-        except Exception as e:
-
-            st.error(f"Error: {e}")
-

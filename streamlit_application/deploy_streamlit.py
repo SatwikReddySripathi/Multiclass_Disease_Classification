@@ -774,20 +774,6 @@ def get_access_token():
     credentials.refresh(Request())
     return credentials.token
 
-"""
-def get_access_token():
-    #Fetches the access token using the full path to gcloud.
-    #gcloud_path = r"C:\Users\SNR\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
-    st.write('Entered the get_access_token')
-    try:
-        token = subprocess.check_output(["gcloud", "auth", "print-access-token"], stderr=subprocess.STDOUT).decode("utf-8").strip()
-        st.write('Done')
-        return token
-    except subprocess.CalledProcessError as e:
-        st.write('Error here')
-        raise RuntimeError(f"Failed to fetch access token: {e.output.decode('utf-8')}")
-"""
-
 
 def encode_image_to_base64(image):
     """Encodes an image file to a base64 string."""

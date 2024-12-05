@@ -786,7 +786,10 @@ def encode_image_to_base64(image):
 # Parameters
 #endpoint_url = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5963526768684957696:predict"
 endpoint_url2 = "https://us-east1-aiplatform.googleapis.com/v1/projects/812555529114/locations/us-east1/endpoints/5472634409301573632:predict"
-
+if "feedback" not in st.session_state:
+    st.session_state.feedback = None
+if "selected_disease" not in st.session_state:
+    st.session_state.selected_disease = None
 
 st.title("ThorAIx - Disease Prediction")
 st.write("Upload an X-ray image and provide demographic details.")
@@ -883,89 +886,65 @@ if st.button("Predict"):
     unsafe_allow_html=True
 )                   
             if st.button("Correctly Predicted"):
-                st.write("Thank you for the feedback")
-                # retrain pipeline
+                st.session_state.feedback = "Thank you for the feedback! The prediction was correct."
+                st.success(st.session_state.feedback)
+
             if st.button("Incorrect Predictions"):
                 try:
-                    st.write("Please select Correct Disease Prediction")
-                    if st.button("No Disease"):
-                        st.write("Thank you for the information, Updating this image as No Disease into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Atelectasis"):
-                        st.write("Thank you for the information, Updating this image as Atelectasis into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Cardiomegaly"):
-                        st.write("Thank you for the information, Updating this image as Cardiomegaly into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Effusion"):
-                        st.write("Thank you for the information, Updating this image as Effusion into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Infiltration"):
-                        st.write("Thank you for the information, Updating this image as Infiltration into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Lung Mass"):
-                        st.write("Thank you for the information, Updating this image as Lung Mass into the model")
-                        #call the retrain pipeline code #Mass
-                        #give hte image, gender, age into it
-                    elif st.button("Nodule"):
-                        st.write("Thank you for the information, Updating this image as Nodule into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Pneumonia"):
-                        st.write("Thank you for the information, Updating this image as Pneumonia into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Pneumothorax"):
-                        st.write("Thank you for the information, Updating this image as Pneumothorax into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Pulmonary Consolidation"):
-                        st.write("Thank you for the information, Updating this image as Pulmonary Consolidation into the model")
-                        #call the retrain pipeline code #Consolidation
-                        #give hte image, gender, age into it
-                    elif st.button("Pulmonary Edema"):
-                        st.write("Thank you for the information, Updating the image as Pulmonary Edema into the model")
-                        #call the retrain pipeline code #Edma
-                        #give hte image, gender, age into it
-                    elif st.button("Emphysema"):
-                        st.write("Thank you for the information, Updating the image as Emphysema into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
-                    elif st.button("Pulmonary Fibrosis"):
-                        st.write("Thank you for the information, Updating the image as Pulmonary Fibrosis into the model")
-                        #call the retrain pipeline code # Fibrosis
-                        #give hte image, gender, age into it
-                    elif st.button("Pleural Thickening"):
-                        st.write("Thank you for the information, Updating the image as Pleural Thickening into the model")
-                        #call the retrain pipeline code #Pleural_Thickening
-                        #give hte image, gender, age into it
-                    elif st.button("Hernia"):
-                        st.write("Thank you for the information, Updating the image as Hernia into the model")
-                        #call the retrain pipeline code
-                        #give hte image, gender, age into it
+                    st.write("Please select the correct disease prediction:")
+                    
+                    # List of disease options
+                    disease_options = [
+                        "No Disease",
+                        "Atelectasis",
+                        "Cardiomegaly",
+                        "Effusion",
+                        "Infiltration",
+                        "Lung Mass",
+                        "Nodule",
+                        "Pneumonia",
+                        "Pneumothorax",
+                        "Pulmonary Consolidation",
+                        "Pulmonary Edema",
+                        "Emphysema",
+                        "Pulmonary Fibrosis",
+                        "Pleural Thickening",
+                        "Hernia",
+                    ]
+
+                    # Dropdown (selectbox) for disease selection
+                    st.session_state.selected_disease = st.selectbox(
+                        "Select the correct disease", 
+                        disease_options, 
+                        index=0 if st.session_state.selected_disease is None else disease_options.index(st.session_state.selected_disease)
+                    )
+
+                    # Confirm the disease selection
+                    if st.button("Confirm Selection"):
+                        st.session_state.feedback = f"Updating the model with '{st.session_state.selected_disease}'"
+                        st.write(f"Thank you for the information. Updating this image as '{st.session_state.selected_disease}' into the model.")
+                        # Call the retrain pipeline code here
+                        # Example: retrain_model(image, st.session_state.selected_disease, gender, age)
+
                 except Exception as e:
                     st.error(f"Error: {e}")
 
+            # Feedback display
+            if st.session_state.feedback:
+                st.success(st.session_state.feedback)
 
-
-                else:
-                    st.subheader("No Disease Detected")
-                    st.write(
-                        "Great news! Based on the analysis of the provided image, our model has not detected any abnormalities. "
-                        "This does not guarantee the absence of health issues, and if you are experiencing any symptoms or have health concerns, "
-                        "we recommend consulting a healthcare professional for a thorough evaluation."
-                    )
-                    st.write(
-                        "Remember, regular checkups and a healthy lifestyle are the best ways to maintain your well-being. "
-                        "This prediction is for informational purposes only and should not be considered a substitute for professional medical advice."
-                    )
-
-
+            # Additional Info for "No Disease Detected" (Optional)
+            if st.session_state.selected_disease == "No Disease":
+                st.subheader("No Disease Detected")
+                st.write(
+                    "Great news! Based on the analysis of the provided image, our model has not detected any abnormalities. "
+                    "This does not guarantee the absence of health issues, and if you are experiencing any symptoms or have health concerns, "
+                    "we recommend consulting a healthcare professional for a thorough evaluation."
+                )
+                st.write(
+                    "Remember, regular checkups and a healthy lifestyle are the best ways to maintain your well-being. "
+                    "This prediction is for informational purposes only and should not be considered a substitute for professional medical advice."
+                )
 
         except Exception as e:
 

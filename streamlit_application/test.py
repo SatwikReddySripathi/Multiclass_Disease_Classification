@@ -1007,3 +1007,4 @@ if st.session_state.step == "thank_you":
         st.session_state.restart = True
         st.session_state.uploaded_image = None
         st.rerun()
+        

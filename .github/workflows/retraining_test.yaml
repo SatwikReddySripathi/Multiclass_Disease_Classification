@@ -1,1 +1,25 @@
+name: Nightly Retraining Job
+
+on:
+  workflow_dispatch: # Allows manual trigger
+  schedule:
+    - cron: '0 2 * * *' # Schedule to run at 2 AM UTC daily (adjust as needed)
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Dependencies
+        run: pip install -r retraining_test_requirements.txt
+
+      - name: Run Retraining Script
+        run: retraining_test.py
 

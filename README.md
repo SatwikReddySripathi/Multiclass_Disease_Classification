@@ -263,7 +263,7 @@ This document outlines the step-by-step process for setting up and executing a G
 8. [Troubleshooting](#troubleshooting)
 9. [Cleanup](#cleanup)
 
-## **1. Prerequisites**
+## **Prerequisites**
 
 Before starting, ensure you have the following:
 
@@ -276,23 +276,201 @@ Before starting, ensure you have the following:
 - A Google Cloud service account key in JSON format.
 - Docker installed locally for testing builds (optional).
 
-## **2. Repository Setup**
+## **Repository Setup**
 
-2.1. Clone this repository:
+1. Clone this repository:
 
 ```bash
 git clone https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification.git
+```
 
+2. Add the following secrets to your GitHub repository settings:
 
+```bash
+GCP_PROJECT_ID: Your Google Cloud project ID.
+GCP_SA_KEY: The contents of your GCP service account key in JSON format.
+```
+
+## **Install Required Python Packages**
+
+Before running the pipeline, ensure all Python dependencies are installed.
+
+### Steps to Install:
+
+1. Create a virtual environment (recommended):
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+```
+
+2. Install dependencies:
+
+```bash
+pip install -r model_requirements.txt
+```
+
+3. Verify installation:
+
+```bash
+pip list
+```
+
+## **GitHub Actions Workflow Overview**
+
+### Purpose
+
+This workflow automates:
+
+- Building and pushing Docker images to Google Artifact Registry.
+- Training a model using the Docker image.
+- Verifying and uploading the model to Google Cloud Storage.
+- Registering the model in Vertex AI and deploying it to an endpoint.
+- Hosting a Streamlit app on Google Cloud Run.
+
+### Key Variables
+
+- `GCP_PROJECT_ID`: Google Cloud project ID.
+- `GCP_SA_KEY`: GCP service account key.
+- `REGISTRY`: Docker image repository in Artifact Registry.
+- `GCS_BUCKET`: Google Cloud Storage bucket name.
+
+**Note:**  
+In this section, we will focus exclusively on the model deployment process. We will not cover the documentation related to training the model. Users should begin from the "Verify Model Output" step in the JSON file.
+
+## **Setting Up Google Cloud**
+
+### **Step 1: Create a GCP Project**
+
+- Go to [GCP Console](https://console.cloud.google.com/) and create a project or use an existing one.
+
+- Copy the project_id content to the GCP_PROJECT_ID secret in your repository.
+
+### **Step 2: Enable Required APIs**
+
+Run the following command:
+
+```bash
+gcloud services enable \
+  artifactregistry.googleapis.com \
+  aiplatform.googleapis.com \
+  storage.googleapis.com \
+  run.googleapis.com
+```
+
+### Step 3: Create a Service Account
+
+```bash
+gcloud iam service-accounts create github-actions \
+  --display-name "GitHub Actions"
+```
+
+### Step 4: Grant Permissions
+
+```bash
+gcloud projects add-iam-policy-binding <PROJECT_ID> \
+  --member="serviceAccount:github-actions@<PROJECT_ID>.iam.gserviceaccount.com" \
+  --role="roles/storage.admin" \
+  --role="roles/artifactregistry.writer" \
+  --role="roles/aiplatform.admin" \
+  --role="roles/run.admin"
+```
+
+### Step 5: Download Service Account Key
+
+```bash
+gcloud iam service-accounts keys create key.json \
+ --iam-account "github-actions@<PROJECT_ID>.iam.gserviceaccount.com"
+```
+
+- Copy the key.json content to the GCP_SA_KEY secret in your repository.
+
+## **Running the Workflow**
+
+### 1. Trigger the Workflow:
+
+- Push changes to the `dheeraj_model` branch.
+- Alternatively, manually trigger the workflow from GitHub's Actions tab.
+
+### 2. Pipeline Steps:
+
+- Builds and pushes a Docker image.
+- Trains the model using the Docker image.
+- Verifies and uploads the model to GCS.
+- Registers the model in Vertex AI.
+- Deploys the model to Vertex AI endpoint.
+- Builds and deploys a Streamlit app to Cloud Run.
+
+## **Expected Outputs**
+
+### **Artifacts**
+
+- Docker image: Stored in Artifact Registry (`$REGISTRY/$IMAGE_NAME:latest`).
+- Trained model: Uploaded to the GCS bucket (`gs://$GCS_BUCKET/models/model.mar`).
+
+### **Services**
+
+- Vertex AI:
+  - Model registered and deployed.
+  - Endpoint created with the associated model.
+- Cloud Run:
+  - Streamlit app deployed and accessible via public URL.
+
+## **Troubleshooting**
+
+1. **Docker Authentication Issues:** Ensure the Docker CLI is authenticated with Artifact Registry:
+
+```bash
+gcloud auth configure-docker us-east1-docker.pkg.dev
+```
+
+2. **Model Upload Failures:**
+
+- Verify the GCS bucket exists.
+- Ensure the service account has the `roles/storage.admin` role.
+
+3. **Vertex AI Errors:**
+
+- Confirm the model URI is correct.
+- Check for missing permissions on the service account.
+
+4. **Cloud Run Deployment:**
+
+- Ensure Cloud Run API is enabled.
+- Verify the Docker image exists in Artifact Registry.
+
+## **Cleanup**
+
+After running the pipeline:
+
+1. Delete temporary files:
+
+```bash
+
+rm -f app/gcp-key.json
+docker system prune -af --volumes
+```
+
+2. Remove GCP resources if not needed:
+
+```bash
+
+gcloud ai models delete <MODEL_ID>
+gcloud ai endpoints delete <ENDPOINT_ID>
+gcloud storage buckets delete gs://$GCS_BUCKET
+```
 
 ## Contributors
+
 [![MLOPs contributors](https://contrib.rocks/image?repo=SatwikReddySripathi/Multiclass_Disease_Classification)](https://github.com/SatwikReddySripathi/Multiclass_Disease_Classification/graphs/contributors)
 
-* [@SatwikReddySripathi](https://github.com/SatwikReddySripathi)
-* [@DhanushAkula](https://github.com/DhanushAkula)
-* [@DhananJayKumarMV](https://github.com/DhananJayKumarMV)
-* [@SravyaKodati](https://github.com/SravyaKodati)
-* [@vamsijilla](https://github.com/vamsijilla)
-* [@malkarsaidheeraj](https://github.com/malkarsaidheeraj)
+- [@SatwikReddySripathi](https://github.com/SatwikReddySripathi)
+- [@DhanushAkula](https://github.com/DhanushAkula)
+- [@DhananJayKumarMV](https://github.com/DhananJayKumarMV)
+- [@SravyaKodati](https://github.com/SravyaKodati)
+- [@vamsijilla](https://github.com/vamsijilla)
+- [@malkarsaidheeraj](https://github.com/malkarsaidheeraj)
+
+```
 
 ```

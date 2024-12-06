@@ -13,3 +13,4 @@ torchvision
 mlflow
 torchserve
 torch-model-archiver
+streamlit

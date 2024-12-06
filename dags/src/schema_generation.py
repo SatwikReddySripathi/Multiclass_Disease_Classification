@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import tensorflow_data_validation as tfdv
+import tensorflow as tf
 import pickle
 from IPython.display import display
 import logging
@@ -95,15 +96,46 @@ def infer_schema(train_stats):
     custom_log("Inferred schema from training data statistics.")
     return schema
 
-def save_schema(schema, output_dir, suffix=''):
+# def save_schema(schema, output_dir, suffix=''):
+#     """Save the schema to a file."""
+#     if not os.path.exists(output_dir):
+#         os.makedirs(output_dir)
+#     schema_file = os.path.join(output_dir, f'schema{suffix}.pbtxt')
+#     tfdv.write_schema_text(schema, schema_file)
+#     print(f"Schema saved to {schema_file}")
+#     custom_log(f"Schema saved to {schema_file}")
+#     return schema_file
+
+def save_schema(schema, output_dir, suffix='',save_as_tfrecord=True):
     """Save the schema to a file."""
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+    # Save as .pbtxt
     schema_file = os.path.join(output_dir, f'schema{suffix}.pbtxt')
     tfdv.write_schema_text(schema, schema_file)
     print(f"Schema saved to {schema_file}")
     custom_log(f"Schema saved to {schema_file}")
-    return schema_file
+
+    # Save as .tfrecord if required
+    if save_as_tfrecord:
+        schema_file_tfrecord = os.path.join(output_dir, f'schema{suffix}.tfrecord')
+        with tf.io.TFRecordWriter(schema_file_tfrecord) as writer:
+            for feature in schema.feature:
+                example = tf.train.Example(
+                    features=tf.train.Features(
+                        feature={
+                            feature.name: tf.train.Feature(
+                                bytes_list=tf.train.BytesList(
+                                    value=[feature.SerializeToString()])
+                            )
+                        }
+                    )
+                )
+                writer.write(example.SerializeToString())
+        print(f"Schema saved as TFRecord to {schema_file_tfrecord}")
+        custom_log(f"Schema saved as TFRecord to {schema_file_tfrecord}")
+
+    return schema_file, schema_file_tfrecord
 
 def visualize_statistics(lhs_stats, rhs_stats, lhs_name="TRAIN_DATASET", rhs_name="EVAL_DATASET"):
     """Visualize statistics for comparison between two datasets."""
@@ -130,7 +162,7 @@ def validate_data_schema():
 
     schema = infer_schema(train_stats)
     
-    schema_file = save_schema(schema,SCHEMA_DIR)
+    schema_file_pbtext, schema_file_tfrecord = save_schema(schema,SCHEMA_DIR)
     
     serving_stats = generate_serving_stats(serving_df)
     

@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1RbGATcZb5UHRrLXo-9J-U66AldfG89fV
 """
 
-!pip install torchmetrics
+#!pip install torchmetrics
 
 import io
 import ast
@@ -24,9 +24,20 @@ from torch.utils.data import random_split, DataLoader, TensorDataset
 
 from torchmetrics.classification import MultilabelPrecision, MultilabelRecall, MultilabelF1Score
 
-test_data_pickle = "preprocessed_dummy_data.pkl"
-model_path = "final_model.pth"
+test_data_pickle = "test_preprocessed_data.pkl"
+model_path = "new_best_model.pt"
 batch_size = 32
+
+with open(test_data_pickle, 'rb') as f:
+  data = pickle.load(f)
+
+  # Print the type and the first few entries (if applicable)
+  print(f"Type of data: {type(data)}")
+
+  if isinstance(data, dict):
+      print(f"Number of keys: {len(data)}")
+      print("Sample keys:", list(data.keys())[:5])
+      print("Sample value of the first key:", data[list(data.keys())[0]])
 
 def load_test_data(original_data_pickle, batch_size, target_size=(224, 224)):
 
@@ -56,6 +67,7 @@ def load_test_data(original_data_pickle, batch_size, target_size=(224, 224)):
     label = np.array(label, dtype=int)
 
     #considering test preprocessing would come from the actual preprocessing pipeline, I'm not doing the age and gender transformation here
+
     age = torch.tensor([item['age']], dtype=torch.float32)
     gender = torch.tensor(item['gender'], dtype=torch.float32)
 
@@ -76,7 +88,7 @@ def load_test_data(original_data_pickle, batch_size, target_size=(224, 224)):
   test_dataset = TensorDataset(images, demographics, labels)
   test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-  print(f" samples: {len(test_dataset)}")
+  print(f"samples: {len(test_dataset)}")
 
   return test_loader
 
@@ -117,6 +129,7 @@ class CustomResNet18(nn.Module):
         return x
 
 def evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric, confidence= 0.3):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     correct = 0
     total = 0
@@ -159,36 +172,33 @@ def evaluate_model(test_loader, model, criterion, precision_metric, recall_metri
 
     return test_accuracy, precision, recall, f1_score
 
-if __name__ == "__main__":
+def main(model_path: str, test_data_pickle: str, batch_size: int, num_classes: int):
 
   config = {
-    "file_path": "preprocessed_data_new.pkl",
     "num_demographics": 3,
     "num_classes": 15,
     "train_percent": 0.7,
     "val_percent": 0.1
   }
 
-  demographics_fc_size = 64
-
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
   print("Loading the best model for evaluation...")
 
-  model = CustomResNet18(demographics_fc_size,
-                           num_demographics=config["num_demographics"],
-                           num_classes=config["num_classes"])
-  model.load_state_dict(torch.load(model_path))
+  model = torch.load(model_path, map_location=device)
   model.to(device)
   model.eval()
 
+
   test_loader = load_test_data(test_data_pickle, batch_size)
 
-  precision_metric = MultilabelPrecision(num_labels= config["num_classes"], average='macro').to(device)
-  recall_metric = MultilabelRecall(num_labels= config["num_classes"], average='macro').to(device)
-  f1_metric = MultilabelF1Score(num_labels= config["num_classes"], average='macro').to(device)
+  precision_metric = MultilabelPrecision(num_labels= num_classes, average='macro').to(device)
+  recall_metric = MultilabelRecall(num_labels= num_classes, average='macro').to(device)
+  f1_metric = MultilabelF1Score(num_labels= num_classes, average='macro').to(device)
 
   criterion = nn.BCEWithLogitsLoss()
   test_accuracy, precision, recall, f1_score= evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric)
 
   print(f"Test Accuracy of the best model: {test_accuracy:.4f}")
+
+  return test_accuracy
+

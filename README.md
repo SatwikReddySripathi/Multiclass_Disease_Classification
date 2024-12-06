@@ -274,7 +274,6 @@ Before starting, ensure you have the following:
   - Vertex AI
   - Cloud Run
 - A Google Cloud service account key in JSON format.
-- Docker installed locally for testing builds (optional).
 
 ## **Repository Setup**
 
@@ -418,23 +417,17 @@ gcloud iam service-accounts keys create key.json \
 
 ## **Troubleshooting**
 
-1. **Docker Authentication Issues:** Ensure the Docker CLI is authenticated with Artifact Registry:
-
-```bash
-gcloud auth configure-docker us-east1-docker.pkg.dev
-```
-
-2. **Model Upload Failures:**
+1. **Model Upload Failures:**
 
 - Verify the GCS bucket exists.
 - Ensure the service account has the `roles/storage.admin` role.
 
-3. **Vertex AI Errors:**
+2. **Vertex AI Errors:**
 
 - Confirm the model URI is correct.
 - Check for missing permissions on the service account.
 
-4. **Cloud Run Deployment:**
+3. **Cloud Run Deployment:**
 
 - Ensure Cloud Run API is enabled.
 - Verify the Docker image exists in Artifact Registry.
@@ -459,6 +452,64 @@ gcloud ai models delete <MODEL_ID>
 gcloud ai endpoints delete <ENDPOINT_ID>
 gcloud storage buckets delete gs://$GCS_BUCKET
 ```
+
+# **Inference Pipeline**
+
+The inference pipeline handles the model’s predictions on user-provided inputs (X-ray image,
+age, gender) via the user interface. It performs the following steps:
+
+### 1. Input Collection:
+
+- The user uploads an X-ray image and enters demographic data (age and gender).
+- Inputs are preprocessed to match the model's requirements, including resizing the image, normalizing age values, and one-hot encoding gender.
+
+### 2. Preprocessing:
+
+- Images are resized and converted into tensors.
+- Demographic data is scaled and encoded using preloaded preprocessors (`age_scaler` and `gender_encoder`).
+- Preprocessed data is combined into a dataset and loaded into a DataLoader for batch processing.
+
+### 3. Model Evaluation:
+
+- The preloaded model (`CustomResNet18`) makes predictions on the input data.
+- Each prediction consists of a probability score for every disease label.
+- Predictions are thresholded (default: 0.3) to determine positive findings.
+
+### 4. Confidence and Prediction Decoding:
+
+- Disease predictions are decoded from the model’s output using a mapping from one-hot indices to disease labels.
+- Confidence scores for predicted diseases are extracted alongside labels for better interpretability on the dashboard.
+
+### 5. Feedback Mechanism:
+
+- After a prediction, the user can provide feedback indicating satisfaction or dissatisfaction.
+- If dissatisfied, a counter is incremented, which is monitored to determine if
+  retraining should be triggered.
+
+# **Retraining Pipeline**
+
+The retraining pipeline is initiated when dissatisfaction feedback exceeds a predefined
+threshold. This pipeline fine-tunes the existing model using additional data collected from
+inference. It follows these steps:
+
+### 1. Triggering Retraining:
+
+- When the dissatisfaction count surpasses the threshold, new inference data (stored in a pickle file) is merged with the existing training data to form an augmented dataset.
+
+### 2. Fine-Tuning the Model:
+
+- The current model weights are loaded as the initial state for fine-tuning.
+- The augmented dataset is used to retrain the model, focusing on improving predictions for the cases where users reported dissatisfaction.
+
+### 3. Evaluation and Comparison:
+
+- After fine-tuning, the retrained model is evaluated on the same test set as the original model using the `testing.py` script.
+- Metrics such as test accuracy are compared between the original and retrained models.
+
+### 9. Deployment Decision:
+
+- If the retrained model outperforms the original model on test accuracy, it replaces the original model in production.
+- Otherwise, the original model remains deployed, and the retraining data is preserved for future iterations.
 
 ## Contributors
 

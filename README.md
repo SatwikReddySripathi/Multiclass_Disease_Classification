@@ -275,6 +275,8 @@ Before starting, ensure you have the following:
   - Cloud Run
 - A Google Cloud service account key in JSON format.
 
+<br>
+
 ## **Repository Setup**
 
 1. Clone this repository:
@@ -289,6 +291,8 @@ git clone https://github.com/SatwikReddySripathi/Multiclass_Disease_Classificati
 GCP_PROJECT_ID: Your Google Cloud project ID.
 GCP_SA_KEY: The contents of your GCP service account key in JSON format.
 ```
+
+<br>
 
 ## **Install Required Python Packages**
 
@@ -315,6 +319,8 @@ pip install -r model_requirements.txt
 pip list
 ```
 
+<br>
+
 ## **GitHub Actions Workflow Overview**
 
 ### Purpose
@@ -336,6 +342,8 @@ This workflow automates:
 
 **Note:**  
 In this section, we will focus exclusively on the model deployment process. We will not cover the documentation related to training the model. Users should begin from the "Verify Model Output" step in the JSON file.
+
+<br>
 
 ## **Setting Up Google Cloud**
 
@@ -384,6 +392,8 @@ gcloud iam service-accounts keys create key.json \
 
 - Copy the key.json content to the GCP_SA_KEY secret in your repository.
 
+<br>
+
 ## **Running the Workflow**
 
 ### 1. Trigger the Workflow:
@@ -400,6 +410,8 @@ gcloud iam service-accounts keys create key.json \
 - Deploys the model to Vertex AI endpoint.
 - Builds and deploys a Streamlit app to Cloud Run.
 
+<br>
+
 ## **Expected Outputs**
 
 ### **Artifacts**
@@ -414,6 +426,8 @@ gcloud iam service-accounts keys create key.json \
   - Endpoint created with the associated model.
 - Cloud Run:
   - Streamlit app deployed and accessible via public URL.
+
+<br>
 
 ## **Troubleshooting**
 
@@ -431,6 +445,8 @@ gcloud iam service-accounts keys create key.json \
 
 - Ensure Cloud Run API is enabled.
 - Verify the Docker image exists in Artifact Registry.
+
+<br>
 
 ## **Cleanup**
 
@@ -452,6 +468,9 @@ gcloud ai models delete <MODEL_ID>
 gcloud ai endpoints delete <ENDPOINT_ID>
 gcloud storage buckets delete gs://$GCS_BUCKET
 ```
+
+<br>
+<br>
 
 # **Inference Pipeline**
 
@@ -486,6 +505,9 @@ age, gender) via the user interface. It performs the following steps:
 - If dissatisfied, a counter is incremented, which is monitored to determine if
   retraining should be triggered.
 
+<br>
+<br>
+
 # **Retraining Pipeline**
 
 The retraining pipeline is initiated when dissatisfaction feedback exceeds a predefined
@@ -510,6 +532,9 @@ inference. It follows these steps:
 
 - If the retrained model outperforms the original model on test accuracy, it replaces the original model in production.
 - Otherwise, the original model remains deployed, and the retraining data is preserved for future iterations.
+
+<br>
+<br>
 
 ## Contributors
 

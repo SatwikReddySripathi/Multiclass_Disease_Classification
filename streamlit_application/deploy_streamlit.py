@@ -13,6 +13,7 @@ import io
 from google.auth import default
 from google.auth.transport.requests import Request
 
+
 class CustomResNet18(nn.Module):
     def __init__(self, demographic_fc_size, num_demographics, num_classes=15):
         super(CustomResNet18, self).__init__()

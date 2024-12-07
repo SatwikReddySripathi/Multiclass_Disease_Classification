@@ -41,7 +41,7 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 import cv2
 from google.cloud import storage
-import os
+import csv
 import subprocess
 gcp_credentials_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = gcp_credentials_path

@@ -320,7 +320,7 @@ def grid_search():
     model_file=model_path, 
     handler=handler_path,
     export= export_path)
-    dummy_items = os.listdir(export_path)
+    #dummy_items = os.listdir(export_path)
     return best_params
 
     

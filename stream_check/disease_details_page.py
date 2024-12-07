@@ -1,5 +1,5 @@
 import streamlit as st
-from main_page import DISEASE_INFO
+from streamlit_application.home_page import DISEASE_INFO
 """
 def disease_details_page():
     disease_id = st.session_state.get("selected_disease", None)

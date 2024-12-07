@@ -767,13 +767,6 @@ DISEASE_INFO = {
 }
 
 
-"""
-def get_access_token():
-    credentials, _ = default()
-    credentials.refresh(Request())
-    return credentials.token
-"""
-
 
 def get_access_token():
     #Fetches the access token using the full path to gcloud.
@@ -879,7 +872,7 @@ if st.session_state.file_uploader_visible:
 if st.session_state.step == "input":
     if st.session_state.uploaded_image:
         # Show the uploaded image
-        st.image(st.session_state.uploaded_image, caption="Uploaded X-ray Image", use_column_width=150)
+        st.image(st.session_state.uploaded_image, caption="Uploaded X-ray Image", use_container_width =10+0)
         image = Image.open(st.session_state.uploaded_image)
 
         is_valid, validation_message = validate_image(image)

@@ -1,5 +1,5 @@
 import streamlit as st
-from main_page import main_page
+from streamlit_application.home_page import main_page
 
 # Initialize session state
 if "expanded_disease" not in st.session_state:

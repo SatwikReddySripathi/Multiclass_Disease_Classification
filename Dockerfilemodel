@@ -33,4 +33,4 @@ EXPOSE 8080
 ENV PORT=8080
 
 # Run the main_page.py file from the streamlit_application folder
-CMD ["streamlit", "run", "application_deployed/Main.py", "--server.port=8080", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "application_deployed/Home_Page.py", "--server.port=8080", "--server.address=0.0.0.0"]

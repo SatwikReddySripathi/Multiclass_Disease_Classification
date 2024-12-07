@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r /requirements.txt
 
 # Copy the streamlit application folder
-COPY streamlit_application /app/streamlit_application
+COPY application_deployed /app/application_deployed
 
 # Expose Streamlit port
 EXPOSE 8080

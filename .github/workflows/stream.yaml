@@ -60,4 +60,5 @@ jobs:
             --port 8080 \
             --cpu 1 \
             --memory 512Mi \
-            --verbosity=debug
+            --verbosity=debug \
+            --timeout 600s

@@ -51,7 +51,7 @@
 #       - name: Build and Push Docker Image
 #         run: |
 #           echo "Building Docker image..."
-#           docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
+#           docker build -f DockerfileRetraining -t $REGISTRY/$IMAGE_NAME:latest .
 #           echo "Pushing image to Artifact Registry..."
 #           docker push $REGISTRY/$IMAGE_NAME:latest
 
@@ -186,27 +186,27 @@
 #           ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
 #           echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/$ENDPOINT_NAME:predict"
 
-#       - name: Build Streamlit Docker Image
-#         run: |
-#           docker build \
-#             -t ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }} \
-#             -f Dockerfilemodel .
+#       # - name: Build Streamlit Docker Image
+#       #   run: |
+#       #     docker build \
+#       #       -t ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }} \
+#       #       -f Dockerfilemodel .
 
-#       - name: Push Streamlit Docker Image
-#         run: |
-#           docker push ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }}
+#       # - name: Push Streamlit Docker Image
+#       #   run: |
+#       #     docker push ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }}
 
-#       - name: Deploy Streamlit App to Cloud Run
-#         run: |
-#           gcloud run deploy streamlit-app \
-#             --image ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }} \
-#             --platform managed \
-#             --region us-east1 \
-#             --allow-unauthenticated \
-#             --port 8080 \
-#             --cpu 1 \
-#             --memory 512Mi \
-#             --verbosity=debug
+#       # - name: Deploy Streamlit App to Cloud Run
+#       #   run: |
+#       #     gcloud run deploy streamlit-app \
+#       #       --image ${{ env.REGISTRY }}/streamlit_app:${{ env.IMAGE_TAG }} \
+#       #       --platform managed \
+#       #       --region us-east1 \
+#       #       --allow-unauthenticated \
+#       #       --port 8080 \
+#       #       --cpu 1 \
+#       #       --memory 512Mi \
+#       #       --verbosity=debug
 
 #       - name: Cleanup
 #         if: always()

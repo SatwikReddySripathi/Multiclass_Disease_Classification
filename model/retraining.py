@@ -27,12 +27,189 @@ from torchvision import models
 import torch.nn.functional as F
 from torchvision import transforms
 from torch.utils.data import random_split, DataLoader, TensorDataset
+from tqdm import tqdm
+from collections import Counter
+import matplotlib.pyplot as plt
 
-best_params_file= "best_params.txt"
-train_preprocessed_data= "train_preprocessed_data.pkl"
-test_preprocessed_data= "test_preprocessed_data.pkl"
-combined_preprocessed_data= "combined_preprocessed_data.pkl"
-best_model= "new_best_model.pt"
+from PIL import Image
+from PIL import ImageOps
+from IPython.display import display
+
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import StandardScaler
+
+import numpy as np
+import cv2
+from google.cloud import storage
+import os
+import subprocess
+gcp_credentials_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = gcp_credentials_path
+
+
+bucket_name = 'nih-dataset-mlops'
+images_base_folder = 'Inference'  # Base folder containing 'positive' and 'negative' folders
+csv_path = 'Inference/feedback.csv'  # Path to the CSV file
+best_params_file= os.path.join(os.getcwd(),"model","best_params.txt")
+train_preprocessed_data= "train_preprocessed_data.pkl" #get from gcp
+#combined_preprocessed_data= "combined_preprocessed_data.pkl"
+best_model= "new_best_model.pt" #get from gcp
+
+
+
+storage_client = storage.Client()
+bucket = storage_client.bucket(bucket_name)
+
+# Function to load images from a folder
+def load_images_from_folder(folder_name):
+    images_data = {}
+    folder_path = f"{images_base_folder}/{folder_name}"
+    blobs = storage_client.list_blobs(bucket_name, prefix=folder_path)
+
+    for blob in blobs:
+        if blob.name.endswith('.png') or blob.name.endswith('.jpg'):  # Process image files only
+            try:
+                image_bytes = blob.download_as_bytes()
+                image = Image.open(io.BytesIO(image_bytes)).convert('L')  # Convert to grayscale
+                image_buffer = io.BytesIO()
+                image.save(image_buffer, format='JPEG')
+
+                # Store image data with file name as key
+                image_name = os.path.basename(blob.name)
+                images_data[image_name] = {
+                    'feedback_type': folder_name,
+                    'image_data': image_buffer.getvalue()
+                }
+            except Exception as e:
+                print(f"Error processing image {blob.name}: {e}")
+    return images_data
+
+# Load images from both positive and negative folders
+
+def get_inference_data(inference_output_path):
+  images_read = {}
+  images_read.update(load_images_from_folder('positive'))
+  images_read.update(load_images_from_folder('negative'))
+  # Map image data with metadata from the CSV
+  csv_blob = bucket.blob(csv_path)
+  csv_data = csv_blob.download_as_text().splitlines()
+  csv_reader = csv.reader(csv_data)
+  next(csv_reader)  # Skip the header
+
+  for row in csv_reader:
+    image_name = row[0]  # Image file name
+    if image_name in images_read:
+        images_read[image_name].update({
+            'Gender': row[2],
+            'Age': row[3],
+            'image_label': row[4]})
+        # Save the combined data to a pickle file
+  with open(inference_output_path, 'wb') as f:
+    pickle.dump(images_read, f)
+
+def preprocess_image(image):
+  try:
+    # Converting the PIL image to a NumPy array if needed
+    if isinstance(image, Image.Image):
+        image = np.array(image)
+
+    # Ensuring image is in grayscale(to avoid problems with the gcp thingy)
+    if len(image.shape) == 3 and image.shape[2] == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+    image = cv2.resize(image, (224, 224))
+
+    if image.max() <= 1.0:
+        image = (image * 255).astype('uint8')
+
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    image = clahe.apply(image)
+    image = image / 255.0
+
+    return image
+
+  except Exception as e:
+    print(f"Error during image preprocessing: {e}")
+    return None
+
+
+def get_demographic_info(original_data_pickle):
+    ages= []
+    genders= []
+
+    with open(original_data_pickle, 'rb') as f:
+        data = pickle.load(f)
+
+    for item in data.values():
+        ages.append(item['Age'])
+        genders.append(item['Gender'])
+
+    ages = np.array(ages)
+    genders = np.array(genders).reshape(-1, 1)  # Gender should be a 2D array for OneHotEncoder
+
+    age_scaler = StandardScaler().fit(ages.reshape(-1, 1))
+    gender_encoder = OneHotEncoder(sparse_output=False).fit(genders)
+
+    print("Calculated and saved new demographics stats.")
+    print("Saved new demographics stats.")
+
+    return age_scaler, gender_encoder
+
+def process_images(inference_output_path, inference_processed_path):
+  try:
+    print("Starting image processing.")
+
+    with open(inference_output_path, 'rb') as f:
+      image_data = pickle.load(f)
+    print(f"Loaded data from {inference_output_path} with {len(image_data)} entries.")
+    age_scaler, gender_encoder = get_demographic_info(inference_output_path)
+
+    processed_images = {}
+
+    for image_index, image_info in tqdm(image_data.items(), desc="Processing images"):
+      image_label = image_info['image_label']
+      image_bytes = image_info['image_data']
+      gender_raw= image_info['Gender']
+      age_raw= image_info['Age']
+
+      age = age_scaler.transform([[age_raw]])[0][0]
+      gender= gender_encoder.transform([[gender_raw]])[0] #one-hot encoding of gender
+
+      image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+
+      preprocessed_image = preprocess_image(image)
+
+      if preprocessed_image.max() <= 1:
+        preprocessed_image = (preprocessed_image * 255).astype(np.uint8)
+
+      if isinstance(preprocessed_image, np.ndarray):
+        preprocessed_image = Image.fromarray(preprocessed_image).convert('L')
+
+      preprocessed_image_bytes = io.BytesIO()
+      preprocessed_image.save(preprocessed_image_bytes, format='JPEG')
+      processed_images[image_index] = {
+          'image_data': preprocessed_image_bytes.getvalue(),
+          'image_label': image_label,
+          'gender': gender,
+          'age': age
+      }
+
+    print(f"Saving all processed images to {inference_processed_path}")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    with open(inference_processed_path, 'wb') as f:
+      pickle.dump(processed_images, f)
+      print(f"All processed images saved to {inference_processed_path}")
+
+  except Exception as e:
+    print(f"An error occurred during image processing: {e}")
+
+  finally:
+    print("Image processing completed.")
+
+def get_inference_preprocessed_data(inference_output_path, inference_processed_path):
+  get_inference_data(inference_output_path)
+  process_images(inference_output_path, inference_processed_path)
 
 def combine_pickles(pickle_files):
     combined_data = {}
@@ -217,10 +394,63 @@ def retrain_model(train_loader, val_loader, best_params):
   print(f"Retrained validation accuracy: {best_val_accuracy}")
   return model
 
+def save_model_as_torchscript(model_path, output_path):
+    # Load the trained model
+    model = torch.load(model_path)
+    model.eval()
+
+    # Create an example input for tracing (assuming the image size and demographic input)
+    image_tensor = torch.rand((1, 1, 224, 224))  # Example input for grayscale image
+    demographics_tensor = torch.rand((1, 3))  # Example demographic tensor ([gender_m, gender_f, age])
+
+    # Trace the model
+    traced_model = torch.jit.trace(model, (image_tensor, demographics_tensor))
+
+    # Save the traced model
+    traced_model.save(output_path)
+
+def create_torch_model_archive(model_name, version, serialized_file, model_file, handler, export):
+    """
+    Function to create a Torch model archive using the torch-model-archiver command.
+
+    Args:
+        model_name (str): The name of the model to be archived.
+        version (str): The version of the model.
+        serialized_file (str): The path to the serialized PyTorch model file (.jit).
+        handler (str): The path to the handler.py file.
+    """
+    try:
+        command = [
+            "torch-model-archiver",
+            "--model-name", model_name,
+            "--version", version,
+            "--serialized-file", serialized_file,
+            "--model-file", model_file,
+            "--handler", handler,
+            "--export-path", export
+        ]
+        
+        # Execute the command
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        print("Model archive created successfully:")
+        print(result.stdout.decode("utf-8"))
+    except subprocess.CalledProcessError as e:
+        print("Failed to create model archive:")
+        print(e.stderr.decode("utf-8"))
+
 def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: str, best_params_file: str, train_percent:float):
 
   #combined_pickle = combine_pickles([config["original_pickle"], config["inference_pickle"]])
+  output_dir = "/app/model_output"
+  if not os.path.exists(output_dir):
+      os.makedirs(output_dir)
+      
+  inference_output_path = os.path.join(os.getcwd(),output_dir,"inference_output.pkl")  # raw_inference data path
+  inference_processed_path = os.path.join(os.getcwd(),output_dir,"inference_processed.pkl") #pre-processed inference data path  
+  get_inference_preprocessed_data(inference_output_path, inference_processed_path)  
   combined_data= combine_pickles([train_data_pickle, inference_data_pickle])
+  combined_pickle = os.path.join(os.getcwd(),output_dir,"combined_pickle.pkl")  
 
   with open(combined_pickle, "wb") as f:
     pickle.dump(combined_data, f)
@@ -256,11 +486,23 @@ def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: st
         best_params=best_params
     )
 
-  timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-  model_filename = f"retrained_best_model_{timestamp}.pt"
-
-  torch.save(retrained_model, model_filename)
-  print(f"Retrained model saved as {model_filename}")
-
+    
+  torch.save(retrained_model, os.path.join(output_dir, "best_model.pt"))
+  print(f"Model saved at {output_dir}/best_model.pt with accuracy: {best_val_accuracy}%")  
+  save_model_as_torchscript(os.path.join(output_dir, model_filename), os.path.join(output_dir, "best_model.jit"))
+  print(f"Model saved at {output_dir}/best_model.jit")
+  handler_path = os.path.join(os.getcwd(),"model","model_handler.py")
+    serialized_path = os.path.join(output_dir,"best_model.jit")
+    model_path = os.path.join(os.getcwd(),"model","model.py")
+    export_path = os.path.join(os.getcwd(),output_dir)
+    create_torch_model_archive(
+    model_name="model",
+    version="1.0",
+    serialized_file=serialized_path,
+    model_file=model_path, 
+    handler=handler_path,
+    export= export_path)
+    
+    
   return model_filename
 

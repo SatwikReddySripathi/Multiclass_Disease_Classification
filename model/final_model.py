@@ -277,7 +277,7 @@ def grid_search():
 
             train_loader, val_loader  = load_data_from_gcp(
                 bucket_name="nih-dataset-mlops",
-                file_path="Data_Preprocessing_files/train_preprocessed_data.pkl"
+                file_path="Data_Preprocessing_files/train_preprocessed_data.pkl",
                 batch_size=batch_size,
                 train_percent=config["train_percent"]
             )

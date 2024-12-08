@@ -78,7 +78,6 @@ def load_custom_model(model_path, demographic_fc_size=64, num_demographics=2, nu
 
 
 
-
 # Disease Mapping and Information
 DISEASE_INFO = {
     'No Finding':{

@@ -51,10 +51,32 @@ bucket_name = 'nih-dataset-mlops'
 images_base_folder = 'Inference'  # Base folder containing 'positive' and 'negative' folders
 csv_path = 'Inference/feedback.csv'  # Path to the CSV file
 best_params_file= os.path.join(os.getcwd(),"model","best_params.txt")
-train_preprocessed_data= "train_preprocessed_data.pkl" #get from gcp
-#combined_preprocessed_data= "combined_preprocessed_data.pkl"
-best_model= "new_best_model.pt" #get from gcp
+train_preprocessed_gcp = "Data_Preprocessing_files/train_preprocessed_data.pkl"
+best_model_gcp = "Models/Latest/best_model.pt"
 
+def download_from_gcp(gcp_file_name, local_file_path):
+    """
+    Download a file from GCP storage bucket to the local filesystem.
+    
+    Args:
+        gcp_file_name (str): Name of the file in the GCP bucket.
+        local_file_path (str): Path to save the file locally.
+    """
+    try:
+        blob = bucket.blob(gcp_file_name)
+        blob.download_to_filename(local_file_path)
+        print(f"Downloaded {gcp_file_name} to {local_file_path}")
+    except Exception as e:
+        print(f"Error downloading {gcp_file_name}: {e}")
+        raise
+
+def setup_gcp_files():
+    """
+    Download required files (`train_preprocessed_data.pkl` and `new_best_model.pt`) from GCP to local.
+    """
+    print("Downloading required files from GCP...")
+    download_from_gcp(train_preprocessed_gcp, train_processed_path)
+    download_from_gcp(best_model_gcp, best_model)
 
 
 storage_client = storage.Client()
@@ -384,9 +406,9 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, num_epoch
     print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {avg_train_loss}, Validation Loss: {avg_val_loss}, Validation Accuracy: {val_accuracy}%")
   return best_val_accuracy
 
-def retrain_model(train_loader, val_loader, best_params):
+def retrain_model(train_loader, val_loader, best_params, best_model_path):
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  model = torch.load(best_model, map_location=device).to(device)
+  model = torch.load( best_model_path, map_location=device).to(device)
   optimizer = optim.Adam(model.parameters(), lr=best_params['learning_rate'])
   criterion = nn.BCEWithLogitsLoss()
 
@@ -445,10 +467,17 @@ def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: st
   output_dir = "/app/model_output"
   if not os.path.exists(output_dir):
       os.makedirs(output_dir)
-      
+
+  train_processed_path = os.path.join(os.getcwd(),output_dir,"training_processed.pkl")  
+  best_model_path = os.path.join(os.getcwd(),output_dir,"best_model_gcp.pt") 
+    
+  download_from_gcp(train_preprocessed_gcp, train_processed_path)
+  download_from_gcp(best_model_gcp, best_model_path)    
+    
   inference_output_path = os.path.join(os.getcwd(),output_dir,"inference_output.pkl")  # raw_inference data path
   inference_processed_path = os.path.join(os.getcwd(),output_dir,"inference_processed.pkl") #pre-processed inference data path  
   get_inference_preprocessed_data(inference_output_path, inference_processed_path)  
+    
   combined_data= combine_pickles([train_data_pickle, inference_data_pickle])
   combined_pickle = os.path.join(os.getcwd(),output_dir,"combined_pickle.pkl")  
 
@@ -483,7 +512,8 @@ def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: st
   retrained_model = retrain_model(
         train_loader=train_loader,
         val_loader=val_loader,
-        best_params=best_params
+        best_params=best_params,
+        best_model_path = best_model_path  
     )
 
     
@@ -492,10 +522,10 @@ def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: st
   save_model_as_torchscript(os.path.join(output_dir, model_filename), os.path.join(output_dir, "best_model.jit"))
   print(f"Model saved at {output_dir}/best_model.jit")
   handler_path = os.path.join(os.getcwd(),"model","model_handler.py")
-    serialized_path = os.path.join(output_dir,"best_model.jit")
-    model_path = os.path.join(os.getcwd(),"model","model.py")
-    export_path = os.path.join(os.getcwd(),output_dir)
-    create_torch_model_archive(
+  serialized_path = os.path.join(output_dir,"best_model.jit")
+  model_path = os.path.join(os.getcwd(),"model","model.py")
+  export_path = os.path.join(os.getcwd(),output_dir)
+  create_torch_model_archive(
     model_name="model",
     version="1.0",
     serialized_file=serialized_path,
@@ -506,3 +536,4 @@ def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: st
     
   return model_filename
 
+main()

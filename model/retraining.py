@@ -476,7 +476,7 @@ def main():
   inference_output_path = os.path.join(os.getcwd(),output_dir,"inference_output.pkl")  # raw_inference data path
   inference_processed_path = os.path.join(os.getcwd(),output_dir,"inference_processed.pkl") #pre-processed inference data path  
     
-  get_inference_preprocessed_data(inference_output_path, inference_processed_path)  
+  get_inference_preprocessed_data(train_processed_path, inference_processed_path)  
     
   combined_data= combine_pickles([train_data_pickle, inference_data_pickle])
   combined_pickle = os.path.join(os.getcwd(),output_dir,"combined_pickle.pkl")  

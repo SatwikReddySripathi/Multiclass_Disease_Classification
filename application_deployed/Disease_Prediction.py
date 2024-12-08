@@ -775,7 +775,10 @@ def initialize_storage(bucket_name):
 def upload_image_to_gcs(bucket, folder_name, image, image_name):
     """Upload an image to GCS."""
     blob = bucket.blob(f"{folder_name}/{image_name}")
-    blob.upload_from_file(image, content_type="image/png")
+    image_buffer = BytesIO()
+    image.save(image_buffer, format="PNG")  # Save the image in PNG format
+    image_buffer.seek(0)
+    blob.upload_from_file(image_buffer, content_type="image/png")
     return blob.public_url
 
 def append_to_jsonl(bucket, folder_name, instance_data, jsonl_filename="predicted_metadata.jsonl"):

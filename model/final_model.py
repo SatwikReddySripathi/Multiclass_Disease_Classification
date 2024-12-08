@@ -241,10 +241,10 @@ def grid_search():
     '''
 
     param_grid = {
-        "num_epochs": [1],
-        "batch_size": [32],
-        "learning_rate": [1e-5],
-        "demographics_fc_size": [64]
+        "num_epochs": [5, 10, 15],
+        "batch_size": [32, 64],
+        "learning_rate": [1e-5, 1e-4, 1e-3],
+        "demographics_fc_size": [64, 128]
     }
 
     best_val_accuracy = 0
@@ -321,6 +321,9 @@ def grid_search():
     handler=handler_path,
     export= export_path)
     #dummy_items = os.listdir(export_path)
+    logging.info("#########################  BEST PARAMETERS ##################")
+    print(best_params)
+    logging.info(best_params)
     return best_params
 
     

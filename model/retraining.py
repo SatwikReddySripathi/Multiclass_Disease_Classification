@@ -461,8 +461,8 @@ def create_torch_model_archive(model_name, version, serialized_file, model_file,
         print(e.stderr.decode("utf-8"))
 
 def main():
-
   #combined_pickle = combine_pickles([config["original_pickle"], config["inference_pickle"]])
+  logging.info("Task Started...")  
   output_dir = "/app/model_output"
   if not os.path.exists(output_dir):
       os.makedirs(output_dir)
@@ -470,11 +470,15 @@ def main():
   train_processed_path = os.path.join(os.getcwd(),output_dir,"training_processed.pkl")  
   best_model_path = os.path.join(os.getcwd(),output_dir,"best_model_gcp.pt") 
     
+  logging.info("Downloading Required Data From GCP...")   
   download_from_gcp(train_preprocessed_gcp, train_processed_path)
   download_from_gcp(best_model_gcp, best_model_path)    
+  logging.info("Downloading Completed")
     
   inference_output_path = os.path.join(os.getcwd(),output_dir,"inference_output.pkl")  # raw_inference data path
   inference_processed_path = os.path.join(os.getcwd(),output_dir,"inference_processed.pkl") #pre-processed inference data path  
+
+  logging.info("Retrieving the Inference Data and Preprocessing")  
     
   get_inference_preprocessed_data(inference_output_path, inference_processed_path)  
     

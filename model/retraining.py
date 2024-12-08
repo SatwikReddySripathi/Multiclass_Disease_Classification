@@ -33,7 +33,6 @@ import matplotlib.pyplot as plt
 
 from PIL import Image
 from PIL import ImageOps
-from IPython.display import display
 
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler

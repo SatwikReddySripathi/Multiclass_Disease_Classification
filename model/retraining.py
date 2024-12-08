@@ -188,7 +188,7 @@ def process_images(inference_output_path, inference_processed_path):
 
     processed_images = {}
 
-    for image_index, image_info in image_data.items():
+    for image_index, image_info in tqdm(image_data.items(), desc="Processing images"):
       image_label = image_info['image_label']
       image_bytes = image_info['image_data']
       gender_raw= image_info['Gender']

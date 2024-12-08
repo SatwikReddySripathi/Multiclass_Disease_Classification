@@ -14,5 +14,4 @@ mlflow
 torchserve
 torch-model-archiver
 streamlit
-sklearn
 cv2

@@ -536,8 +536,6 @@ def main():
     model_file=model_path, 
     handler=handler_path,
     export= export_path)
-    
-    
-  return model_filename
+
 
 main()

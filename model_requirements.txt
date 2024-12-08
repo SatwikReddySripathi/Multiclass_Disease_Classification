@@ -11,3 +11,4 @@ torchmetrics
 Pillow
 torchvision
 mlflow
+streamlit

@@ -916,7 +916,7 @@ if st.session_state.step == "input":
         # Show the uploaded image
         st.image(st.session_state.uploaded_image, caption="Uploaded X-ray Image", use_container_width =10+0)
         image = Image.open(st.session_state.uploaded_image)
-        image_name = image.name
+        image_name = uploaded_image.name
 
         is_valid, validation_message = validate_image(image)
         if not is_valid:

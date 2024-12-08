@@ -1,10 +1,9 @@
 name: Nightly Retraining Job
 
 on:
-  workflow_dispatch: # Allows manual trigger
-  schedule:
-    - cron: '0 12 * * *' # Schedule to run at 2 AM UTC daily (adjust as needed)
-
+  push:
+    paths:
+      - trigger.txt 
 jobs:
   run-script:
     runs-on: ubuntu-latest

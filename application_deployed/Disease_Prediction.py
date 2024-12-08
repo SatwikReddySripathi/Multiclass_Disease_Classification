@@ -814,19 +814,19 @@ def append_to_jsonl(bucket, folder_name, instance_data, jsonl_filename="feedback
     blob.upload_from_string(updated_data, content_type="application/jsonl")
 
 
-"""
+
 def get_access_token():
     credentials, _ = default()
     credentials.refresh(Request())
     return credentials.token
-"""
-from google.auth.transport.requests import Request
+
+"""from google.auth.transport.requests import Request
 from google.oauth2.service_account import Credentials
 def get_access_token():
     SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
     credentials = Credentials.from_service_account_file('D:/MS/Sem3 - Fall 2024/MLOps/Multiclass_Disease_Classification/application_deployed/secret_key.json', scopes=SCOPES)
     credentials.refresh(Request())
-    return credentials.token
+    return credentials.token"""
 
 
 def encode_image_to_base64(image):

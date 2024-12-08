@@ -772,16 +772,31 @@ def initialize_storage(bucket_name):
     bucket = client.bucket(bucket_name)
     return bucket
 
-def upload_image_to_gcs(bucket, folder_name, image, image_name):
+def upload_image_to_gcs(bucket, folder_name, uploaded_file, image_name):
     """Upload an image to GCS."""
-    blob = bucket.blob(f"{folder_name}/{image_name}")
-    image_buffer = BytesIO()
-    image.save(image_buffer, format="PNG")  # Save the image in PNG format
-    image_buffer.seek(0)
-    blob.upload_from_file(image_buffer, content_type="image/png")
-    return blob.public_url
+   
 
-def append_to_jsonl(bucket, folder_name, instance_data, jsonl_filename="predicted_metadata.jsonl"):
+    if uploaded_file is None:
+        st.error("No file uploaded!")
+        return
+
+    image_buffer = BytesIO(uploaded_file.read())
+
+    # Open and process the image if needed
+    image = Image.open(image_buffer)
+    image.verify()
+
+    # Rewind the buffer for upload
+    image_buffer.seek(0)
+    # Upload to Google Cloud Storage
+    blob = bucket.blob(f"{folder_name}/{image_name}")
+    blob.upload_from_file(image_buffer, content_type=uploaded_file.type)
+
+    st.success("Image uploaded successfully!")
+
+    print("Image uploaded successfully!")
+
+def append_to_jsonl(bucket, folder_name, instance_data, jsonl_filename="feedback.jsonl"):
     """Append metadata to a JSONL file in GCS."""
     blob = bucket.blob(f"{folder_name}/{jsonl_filename}")
     try:
@@ -799,9 +814,17 @@ def append_to_jsonl(bucket, folder_name, instance_data, jsonl_filename="predicte
     blob.upload_from_string(updated_data, content_type="application/jsonl")
 
 
-
+"""
 def get_access_token():
     credentials, _ = default()
+    credentials.refresh(Request())
+    return credentials.token
+"""
+from google.auth.transport.requests import Request
+from google.oauth2.service_account import Credentials
+def get_access_token():
+    SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+    credentials = Credentials.from_service_account_file('D:/MS/Sem3 - Fall 2024/MLOps/Multiclass_Disease_Classification/application_deployed/secret_key.json', scopes=SCOPES)
     credentials.refresh(Request())
     return credentials.token
 
@@ -1016,27 +1039,27 @@ if st.session_state.step == "results":
         if st.button("Correctly Predicted"):
 
             folder_name = "feedback/correctly_predicted"
+            jsonl_folder ='feedback'
             #################################################
             ############# For GCP ##########
             image_name = st.session_state.uploaded_image.name
-            """with BytesIO() as img_file:
-                image = st.session_state.uploaded_image
-                image.save(img_file, format="JPEG")
-                img_file.seek(0)"""
+
             upload_image_to_gcs(bucket, folder_name, st.session_state.uploaded_image, image_name)
-            preds = st.session_state.predictions
-            
+            predictions = st.session_state.predictions
+            image = Image.open(st.session_state.uploaded_image)
             # Append metadata to JSONL file
             image_metadata = encode_image_to_base64(image)
+            preds = [item[0] for item in predictions]  # List of labels
+            probs = [item[1] for item in predictions]
             instance_data = {
                 "image_name": image_name,
                 "image_metadata": image_metadata,
                 "age": age,
                 "gender": gender,
-                "predicted_labels": preds
+                "predicted_labels": preds,
+                "confidence_score":probs
             }
-            append_to_jsonl(bucket, folder_name, instance_data)
-            st.success(f"Image and metadata stored in '{folder_name}' folder successfully!")
+            append_to_jsonl(bucket, jsonl_folder, instance_data)
 
 
             st.session_state.feedback = "Thank you for your feedback!"
@@ -1056,28 +1079,29 @@ if st.session_state.step == "incorrect":
     )
     if st.button("Confirm Selection"):
         folder_name = "feedback/incorrectly_predicted"
+        jsonl_folder ='feedback'
         true_label = st.session_state.selected_disease
 
         #################################################
         ############# For GCP ##########
         image_name = st.session_state.uploaded_image.name
-        image = st.session_state.uploaded_image
-        with BytesIO() as img_file:
-                image.save(img_file, format="JPEG")
-                img_file.seek(0)
-                upload_image_to_gcs(bucket, folder_name, img_file, image_name)
-            
+        upload_image_to_gcs(bucket, folder_name, st.session_state.uploaded_image, image_name)
+        image = Image.open(st.session_state.uploaded_image)
+        predictions = st.session_state.predictions
         # Append metadata to JSONL file
         image_metadata = encode_image_to_base64(image)
+        preds = [item[0] for item in predictions]
+        probs = [item[1] for item in predictions]
         instance_data = {
             "image_name": image_name,
             "image_metadata": image_metadata,
             "age": age,
             "gender": gender,
-            "predicted_labels": true_label
+            "predicted_labels": preds,
+            "true_labels": true_label,
+            "confidence_score":probs
         }
-        append_to_jsonl(bucket, folder_name, instance_data)
-        st.success(f"Image and metadata stored in '{folder_name}' folder successfully!")
+        append_to_jsonl(bucket, jsonl_folder, instance_data)
 
         st.session_state.feedback = f"Thank you! As provided in the feedback "
         st.session_state.step = "thank_you"

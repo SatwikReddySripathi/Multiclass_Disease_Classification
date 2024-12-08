@@ -871,6 +871,10 @@ if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
 if "file_uploader_visible" not in st.session_state:
     st.session_state.file_uploader_visible = True
+if "age" not in st.session_state.age:
+    st.session_state.age = None
+if "gender" not in st.session_state.gender:
+    st.session_state.gender = None
 
 if st.session_state.restart:
     # Reset all session states
@@ -880,6 +884,8 @@ if st.session_state.restart:
     st.session_state.restart = False
     st.session_state.uploaded_image = None
     st.session_state.file_uploader_visible = True
+    st.session_state.gender = None
+    st.session_state.age = None
     st.rerun()
 
 ####################################################
@@ -900,9 +906,9 @@ if gender == "Male":
     gender = "M"
 else:
     gender = "F"
-
+st.session_state.gender = gender
 age = st.number_input("Enter Age", min_value=0, max_value=120, step=1, value=50)
-
+st.session_state.age = age
 
 if st.session_state.file_uploader_visible:
     uploaded_image = st.file_uploader("Upload an X-ray Image", type=["png", "jpg", "jpeg"])
@@ -915,7 +921,10 @@ if st.session_state.step == "input":
         # Show the uploaded image
         st.image(st.session_state.uploaded_image, caption="Uploaded X-ray Image", use_container_width =10+0)
         image = Image.open(st.session_state.uploaded_image)
-        image_name = uploaded_image.name
+
+        #################################################
+        ############# For GCP ##########
+        image_name = st.session_state.uploaded_image.name
 
         is_valid, validation_message = validate_image(image)
         if not is_valid:
@@ -1018,7 +1027,11 @@ if st.session_state.step == "results":
         if st.button("Correctly Predicted"):
 
             folder_name = "feedback/correctly_predicted"
+            #################################################
+            ############# For GCP ##########
+            image_name = st.session_state.uploaded_image.name
             with BytesIO() as img_file:
+                image = st.session_state.uploaded_image
                 image.save(img_file, format="JPEG")
                 img_file.seek(0)
                 upload_image_to_gcs(bucket, folder_name, img_file, image_name)
@@ -1056,7 +1069,10 @@ if st.session_state.step == "incorrect":
         folder_name = "feedback/incorrectly_predicted"
         true_label = st.session_state.selected_disease
 
-
+        #################################################
+        ############# For GCP ##########
+        image_name = st.session_state.uploaded_image.name
+        image = st.session_state.uploaded_image
         with BytesIO() as img_file:
                 image.save(img_file, format="JPEG")
                 img_file.seek(0)

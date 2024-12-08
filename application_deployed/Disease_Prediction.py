@@ -779,6 +779,11 @@ def upload_image_to_gcs(bucket, folder_name, uploaded_file, image_name):
     if uploaded_file is None:
         st.error("No file uploaded!")
         return
+    if uploaded_file is not None:
+        file_bytes = uploaded_file.read()
+        st.write(f"File size: {len(file_bytes)} bytes")
+        st.write(f"First 20 bytes: {file_bytes[:20]}")
+        uploaded_file.seek(0)  # Reset file pointer
 
     image_buffer = BytesIO(uploaded_file.read())
 

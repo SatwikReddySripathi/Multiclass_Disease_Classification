@@ -871,10 +871,6 @@ if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
 if "file_uploader_visible" not in st.session_state:
     st.session_state.file_uploader_visible = True
-if "age" not in st.session_state.age:
-    st.session_state.age = None
-if "gender" not in st.session_state.gender:
-    st.session_state.gender = None
 
 if st.session_state.restart:
     # Reset all session states
@@ -884,8 +880,6 @@ if st.session_state.restart:
     st.session_state.restart = False
     st.session_state.uploaded_image = None
     st.session_state.file_uploader_visible = True
-    st.session_state.gender = None
-    st.session_state.age = None
     st.rerun()
 
 ####################################################

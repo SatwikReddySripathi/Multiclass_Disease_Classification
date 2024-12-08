@@ -216,8 +216,6 @@ def process_images(inference_output_path, inference_processed_path):
       }
 
     print(f"Saving all processed images to {inference_processed_path}")
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
     with open(inference_processed_path, 'wb') as f:
       pickle.dump(processed_images, f)
       print(f"All processed images saved to {inference_processed_path}")
@@ -230,6 +228,7 @@ def process_images(inference_output_path, inference_processed_path):
 
 def get_inference_preprocessed_data(inference_output_path, inference_processed_path):
   get_inference_data(inference_output_path)
+  logging.info("Raw Inference Data is retrieved")  
   process_images(inference_output_path, inference_processed_path)
 
 def combine_pickles(pickle_files):

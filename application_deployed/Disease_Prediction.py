@@ -1016,12 +1016,12 @@ if st.session_state.step == "results":
             #################################################
             ############# For GCP ##########
             image_name = st.session_state.uploaded_image.name
-            with BytesIO() as img_file:
+            """with BytesIO() as img_file:
                 image = st.session_state.uploaded_image
                 image.save(img_file, format="JPEG")
-                img_file.seek(0)
-                upload_image_to_gcs(bucket, folder_name, img_file, image_name)
-                preds = st.session_state.predictions
+                img_file.seek(0)"""
+            upload_image_to_gcs(bucket, folder_name, st.session_state.uploaded_image, image_name)
+            preds = st.session_state.predictions
             
             # Append metadata to JSONL file
             image_metadata = encode_image_to_base64(image)

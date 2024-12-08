@@ -241,10 +241,10 @@ def grid_search():
     '''
 
     param_grid = {
-        "num_epochs": [5, 10, 15],
-        "batch_size": [32, 64],
-        "learning_rate": [1e-5, 1e-4, 1e-3],
-        "demographics_fc_size": [64, 128]
+        "num_epochs": [5, 10],
+        "batch_size": [32],
+        "learning_rate": [1e-5, 1e-3],
+        "demographics_fc_size": [64]
     }
 
     best_val_accuracy = 0

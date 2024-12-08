@@ -184,10 +184,11 @@ def process_images(inference_output_path, inference_processed_path):
       image_data = pickle.load(f)
     print(f"Loaded data from {inference_output_path} with {len(image_data)} entries.")
     age_scaler, gender_encoder = get_demographic_info(inference_output_path)
+    logging.info("Pre-processing Inference Images...")  
 
     processed_images = {}
 
-    for image_index, image_info in tqdm(image_data.items(), desc="Processing images"):
+    for image_index, image_info in image_data.items():
       image_label = image_info['image_label']
       image_bytes = image_info['image_data']
       gender_raw= image_info['Gender']

@@ -14,4 +14,4 @@ mlflow
 torchserve
 torch-model-archiver
 streamlit
-cv2
+opencv-python

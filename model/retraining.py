@@ -19,7 +19,7 @@ import datetime
 import itertools
 import numpy as np
 from PIL import Image
-from google.colab import files
+
 
 import torch.nn as nn
 import torch.optim as optim
@@ -461,7 +461,7 @@ def create_torch_model_archive(model_name, version, serialized_file, model_file,
         print("Failed to create model archive:")
         print(e.stderr.decode("utf-8"))
 
-def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: str, best_params_file: str, train_percent:float):
+def main():
 
   #combined_pickle = combine_pickles([config["original_pickle"], config["inference_pickle"]])
   output_dir = "/app/model_output"
@@ -476,6 +476,7 @@ def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: st
     
   inference_output_path = os.path.join(os.getcwd(),output_dir,"inference_output.pkl")  # raw_inference data path
   inference_processed_path = os.path.join(os.getcwd(),output_dir,"inference_processed.pkl") #pre-processed inference data path  
+    
   get_inference_preprocessed_data(inference_output_path, inference_processed_path)  
     
   combined_data= combine_pickles([train_data_pickle, inference_data_pickle])
@@ -505,7 +506,7 @@ def main(train_data_pickle: str, inference_data_pickle: str, combined_pickle: st
   train_loader, val_loader = load_data(
         original_data_pickle= combined_pickle,
         batch_size=best_params["batch_size"],
-        train_percent=train_percent,
+        train_percent=0.8,
         target_size=(224, 224)
     )
 

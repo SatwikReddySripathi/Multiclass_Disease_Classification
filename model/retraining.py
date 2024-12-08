@@ -413,7 +413,7 @@ def retrain_model(train_loader, val_loader, best_params, best_model_path):
 
   best_val_accuracy = train_model(train_loader, val_loader, model, criterion, optimizer, best_params['num_epochs'])
   print(f"Retrained validation accuracy: {best_val_accuracy}")
-  return model
+  return model , best_val_accuracy
 
 def save_model_as_torchscript(model_path, output_path):
     # Load the trained model
@@ -513,7 +513,7 @@ def main():
         target_size=(224, 224)
     )
 
-  retrained_model = retrain_model(
+  retrained_model, accuracy = retrain_model(
         train_loader=train_loader,
         val_loader=val_loader,
         best_params=best_params,
@@ -522,8 +522,8 @@ def main():
 
     
   torch.save(retrained_model, os.path.join(output_dir, "best_model.pt"))
-  print(f"Model saved at {output_dir}/best_model.pt with accuracy: {best_val_accuracy}%")  
-  save_model_as_torchscript(os.path.join(output_dir, model_filename), os.path.join(output_dir, "best_model.jit"))
+  print(f"Model saved at {output_dir}/best_model.pt with accuracy: {accuracy}%")  
+  save_model_as_torchscript(os.path.join(output_dir, "best_model.pt"), os.path.join(output_dir, "best_model.jit"))
   print(f"Model saved at {output_dir}/best_model.jit")
   handler_path = os.path.join(os.getcwd(),"model","model_handler.py")
   serialized_path = os.path.join(output_dir,"best_model.jit")

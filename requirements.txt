@@ -19,3 +19,11 @@ tensorflow-data-validation
 IPython
 torchmetrics
 ray[tune]
+requests
+base64
+subprocess
+streamlit
+google-auth 
+google-auth-oauthlib
+google-api-python-client
+google-cloud-storage

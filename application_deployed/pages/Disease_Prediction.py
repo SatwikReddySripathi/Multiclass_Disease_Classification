@@ -82,8 +82,8 @@ def load_custom_model(model_path, demographic_fc_size=64, num_demographics=2, nu
 DISEASE_INFO = {
     'No Finding':{
         "name": "No Finding",
-        "description":"Our Model predicts that there might be any disese afftecting you, other than your own imagination",
-        "symptoms":"Just some personal dissatisfaction",
+        "description":"Our Model predicts that there might be any disese afftecting you",
+        "symptoms":"Visit a medical professional if anything seriuos.",
         "":"",
         "":"",
         "":"",
@@ -299,7 +299,7 @@ DISEASE_INFO = {
         "Minimize exposure to known allergens and irritants.",
         "Follow safety measures in workplaces with exposure to toxins."
     ],
-    "image": "https://images.app.goo.gl/677X3mCgkZhnxGXA8",
+    "image": "https://c7.alamy.com/comp/ECWMJ9/chest-x-ray-showing-a-lung-infiltrate-of-pneumonia-ECWMJ9.jpg",
     },
     'Mass': {
         "name": "Mass",
@@ -781,8 +781,8 @@ def upload_image_to_gcs(bucket, folder_name, uploaded_file, image_name):
         return
     if uploaded_file is not None:
         file_bytes = uploaded_file.read()
-        st.write(f"File size: {len(file_bytes)} bytes")
-        st.write(f"First 20 bytes: {file_bytes[:20]}")
+        #st.write(f"File size: {len(file_bytes)} bytes")
+        #st.write(f"First 20 bytes: {file_bytes[:20]}")
         uploaded_file.seek(0)  # Reset file pointer
 
     image_buffer = BytesIO(uploaded_file.read())
@@ -797,7 +797,7 @@ def upload_image_to_gcs(bucket, folder_name, uploaded_file, image_name):
     blob = bucket.blob(f"{folder_name}/{image_name}")
     blob.upload_from_file(image_buffer, content_type=uploaded_file.type)
 
-    st.success("Image uploaded successfully!")
+    #st.success("Image uploaded successfully!")
 
     print("Image uploaded successfully!")
 
@@ -824,14 +824,6 @@ def get_access_token():
     credentials, _ = default()
     credentials.refresh(Request())
     return credentials.token
-
-"""from google.auth.transport.requests import Request
-from google.oauth2.service_account import Credentials
-def get_access_token():
-    SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
-    credentials = Credentials.from_service_account_file('D:/MS/Sem3 - Fall 2024/MLOps/Multiclass_Disease_Classification/application_deployed/secret_key.json', scopes=SCOPES)
-    credentials.refresh(Request())
-    return credentials.token"""
 
 
 def encode_image_to_base64(image):
@@ -1033,7 +1025,9 @@ if st.session_state.step == "results":
                         </div>
                         """,
                         unsafe_allow_html=True
-                        )                   
+                        )     
+        else:
+            st.write("The imaging results indicate no detectable abnormalities or significant findings in the thoracic region. All structures appear within normal anatomical limits, with no evidence of pathological changes. This means your chest looks healthy, and there are no signs of issues or concerns")              
                                 
 
     st.subheader("Please provide feedback on the predictions")                  
@@ -1062,8 +1056,10 @@ if st.session_state.step == "results":
                 "age": age,
                 "gender": gender,
                 "predicted_labels": preds,
-                "confidence_score":probs
-            }
+                "true_labels": preds,
+                "confidence_score":probs,
+                "feedback_type":"Correct_Predictions"
+        }
             append_to_jsonl(bucket, jsonl_folder, instance_data)
 
 
@@ -1104,7 +1100,8 @@ if st.session_state.step == "incorrect":
             "gender": gender,
             "predicted_labels": preds,
             "true_labels": true_label,
-            "confidence_score":probs
+            "confidence_score":probs,
+            "feedback_type":"Incorrect_Predictions"
         }
         append_to_jsonl(bucket, jsonl_folder, instance_data)
 

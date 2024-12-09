@@ -12,6 +12,8 @@ from io import BytesIO
 import io
 from google.auth import default
 from google.auth.transport.requests import Request
+from google.oauth2.service_account import Credentials
+
 import streamlit as st
 import numpy as np
 from torchvision import transforms
@@ -819,12 +821,17 @@ def append_to_jsonl(bucket, folder_name, instance_data, jsonl_filename="feedback
     blob.upload_from_string(updated_data, content_type="application/jsonl")
 
 
-
+"""
 def get_access_token():
     credentials, _ = default()
     credentials.refresh(Request())
     return credentials.token
-
+"""
+def get_access_token():
+    SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+    credentials = Credentials.from_service_account_file('D:/MS/Sem3 - Fall 2024/MLOps/Multiclass_Disease_Classification/application_deployed/secret_key.json', scopes=SCOPES)
+    credentials.refresh(Request())
+    return credentials.token
 
 def encode_image_to_base64(image):
     """Encodes an image file to a base64 string."""
@@ -1037,8 +1044,8 @@ if st.session_state.step == "results":
     with col1:
         if st.button("Correctly Predicted"):
 
-            folder_name = "feedback/correctly_predicted"
-            jsonl_folder ='feedback'
+            folder_name = "Inference/positive"
+            jsonl_folder ='Inference'
             #################################################
             ############# For GCP ##########
             image_name = st.session_state.uploaded_image.name
@@ -1079,8 +1086,8 @@ if st.session_state.step == "incorrect":
         index=0 if st.session_state.selected_disease is None else disease_options.index(st.session_state.selected_disease),
     )
     if st.button("Confirm Selection"):
-        folder_name = "feedback/incorrectly_predicted"
-        jsonl_folder ='feedback'
+        folder_name = "Inference/negative"
+        jsonl_folder ='Inference'
         true_label = st.session_state.selected_disease
 
         #################################################

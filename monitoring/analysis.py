@@ -1,102 +1,313 @@
-import json
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+import dash_table
+import plotly.graph_objects as go
+import plotly.express as px
 import pandas as pd
-import matplotlib.pyplot as plt
+from dash.dependencies import Input, Output
+from google.oauth2.service_account import Credentials
+from google.auth.transport.requests import Request
+from google.cloud import storage
+import json
+import glob
+import io
+import pytz
 import os
-file_path = os.path.abspath('monitoring/feedback.jsonl')
-print(file_path)
 
-# Load JSONL File
-file_path = r"D:\MS\Sem3 - Fall 2024\MLOps\Multiclass_Disease_Classification\monitoring\monitoring\feedback.jsonl"
-data = []
-with open(file_path, 'r') as file:
-    for line in file:
+def get_access_token():
+    SCOPES = ['https://www.googleapis.com/auth/cloud-platform']
+    credentials = Credentials.from_service_account_file('D:/MS/Sem3 - Fall 2024/MLOps/Multiclass_Disease_Classification/application_deployed/secret_key.json', scopes=SCOPES)
+    credentials.refresh(Request())
+    return credentials.token
+access_token = get_access_token()
+
+
+def initialize_storage(bucket_name):
+    """Initialize GCS client and get bucket."""
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    return bucket
+
+bucket_name = "nih-dataset-mlops"
+bucket = initialize_storage(bucket_name)
+
+# List all blobs (files) in the bucket
+blobs = bucket.list_blobs()
+
+# Print the file names (blobs) in the bucket
+# for blob in blobs:
+#     print(blob.name)
+file_path = 'feedback/feedback.jsonl'
+
+# Get the blob (file) from the bucket
+blob = bucket.blob(file_path)
+
+# Download the file content as a string
+file_content = blob.download_as_text()
+
+
+
+
+
+# import json
+# Read the content of the JSONL file
+def process_jsonl_data(file_content):
+    data = []
+    for line in file_content.splitlines():
         data.append(json.loads(line))
+    return data
 
-# Convert to DataFrame
+# Process the data
+data = process_jsonl_data(file_content)
+
+# Convert the list of dictionaries into a DataFrame
 df = pd.DataFrame(data)
+print(df)
 
-# Expand Predicted Labels for Per-Disease Analysis
-df_exploded = df.explode('predicted_labels')
-df_exploded['is_correct'] = df_exploded['feedback_type'] == 'correct'
+# Expand the predicted labels, true labels, and confidence scores into separate rows for easier analysis
+expanded_data = []
+for index, row in df.iterrows():
+    for i, label in enumerate(row['predicted_labels']):
 
-# Disease-Level Metrics
-metrics = df_exploded.groupby('predicted_labels').agg(
-    correct_predictions=('is_correct', 'sum'),
-    total_predictions=('predicted_labels', 'count')
-).reset_index()
-metrics['accuracy'] = metrics['correct_predictions'] / metrics['total_predictions']
+        # if not isinstance(row['true_labels'][i], list):
+        #     true_label = [row['true_labels'][i]]
+        # else:
+        #     true_label = row['true_labels'][i]
 
-# Display Disease-Level Metrics
-import ace_tools as tools
-tools.display_dataframe_to_user(name="Disease Prediction Metrics", dataframe=metrics)
+        expanded_data.append({
+            'image_name': row['image_name'],
+            'age': row['age'],
+            'gender': row['gender'],
+            'predicted_label': label,
+            # 'true_label': true_label,
+            'confidence_score': row['confidence_score'][i],
+            'feedback_type': row['feedback_type']
+        })
 
-# Visualization 1: Correct vs. Incorrect Predictions per Disease
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.bar(metrics['predicted_labels'], metrics['correct_predictions'], label='Correct Predictions')
-ax.bar(metrics['predicted_labels'], metrics['total_predictions'] - metrics['correct_predictions'],
-       bottom=metrics['correct_predictions'], label='Incorrect Predictions')
-ax.set_title('Correct and Incorrect Predictions per Disease')
-ax.set_xlabel('Disease')
-ax.set_ylabel('Number of Predictions')
-ax.legend()
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
+expanded_df = pd.DataFrame(expanded_data)
+print(expanded_df)
 
-# Visualization 2: Accuracy per Disease
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.plot(metrics['predicted_labels'], metrics['accuracy'], marker='o', label='Accuracy', linestyle='-')
-ax.set_title('Accuracy per Disease')
-ax.set_xlabel('Disease')
-ax.set_ylabel('Accuracy')
-ax.set_ylim(0, 1)
-ax.axhline(y=0.5, color='r', linestyle='--', label='Baseline (50%)')
-ax.legend()
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
+# Additional Metrics Calculation
+# 1. Overall Inference Count and Count for Every Disease
+overall_inference_count = expanded_df['predicted_label'].value_counts()
+print(overall_inference_count)
+print('Overall Inference: ',len(expanded_df))
 
-# Additional Analysis 1: Gender-Based Analysis
-gender_metrics = df_exploded.groupby(['gender', 'predicted_labels']).agg(
-    correct_predictions=('is_correct', 'sum'),
-    total_predictions=('predicted_labels', 'count')
-).reset_index()
-gender_metrics['accuracy'] = gender_metrics['correct_predictions'] / gender_metrics['total_predictions']
-tools.display_dataframe_to_user(name="Gender-Based Disease Metrics", dataframe=gender_metrics)
+# 2. Correct and Incorrect Inferences for Every Disease
+# expanded_df['is_correct'] = expanded_df[expanded_df['predicted_label'] == expanded_df['true_label']]
+# Group by predicted_label and feedback_type, and count the occurrences
+correct_inference_count = expanded_df[expanded_df['feedback_type'] == 'Correct_Predictions'].groupby('predicted_label').size()
+incorrect_inference_count = expanded_df[expanded_df['feedback_type'] == 'Incorrect_Predictions'].groupby('predicted_label').size()
 
-# Visualization 3: Gender Accuracy by Disease
-fig, ax = plt.subplots(figsize=(10, 6))
-for gender, group in gender_metrics.groupby('gender'):
-    ax.plot(group['predicted_labels'], group['accuracy'], marker='o', label=gender)
-ax.set_title('Accuracy by Gender and Disease')
-ax.set_xlabel('Disease')
-ax.set_ylabel('Accuracy')
-ax.set_ylim(0, 1)
-ax.legend(title='Gender')
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
+print("Correct Inference Count:")
+print(correct_inference_count)
 
-# Additional Analysis 2: Age Group Trends
-# Categorize patients into age groups
-bins = [0, 30, 50, 70, 100]
-labels = ['0-30', '31-50', '51-70', '71-100']
-df_exploded['age_group'] = pd.cut(df_exploded['age'], bins=bins, labels=labels, right=True)
+print("\nIncorrect Inference Count:")
+print(incorrect_inference_count)
 
-# Calculate accuracy by age group
-age_group_metrics = df_exploded.groupby('age_group').agg(
-    correct_predictions=('is_correct', 'sum'),
-    total_predictions=('age_group', 'count')
-).reset_index()
-age_group_metrics['accuracy'] = age_group_metrics['correct_predictions'] / age_group_metrics['total_predictions']
-tools.display_dataframe_to_user(name="Age Group Metrics", dataframe=age_group_metrics)
 
-# Visualization 4: Accuracy by Age Group
-fig, ax = plt.subplots(figsize=(8, 6))
-ax.bar(age_group_metrics['age_group'], age_group_metrics['accuracy'], color='skyblue', edgecolor='black')
-ax.set_title('Accuracy by Age Group')
-ax.set_xlabel('Age Group')
-ax.set_ylabel('Accuracy')
-ax.set_ylim(0, 1)
-plt.tight_layout()
-plt.show()
+# 3. Confidence Scores for Correct Inferences
+correct_confidence_scores = expanded_df[expanded_df['feedback_type'] == 'Correct_Predictions'].groupby('predicted_label')['confidence_score'].mean()
+
+
+
+
+
+# 1. Create a function to calculate precision, recall, and F1 score
+def calculate_metrics(df):
+    metrics = {}
+
+    # Get the unique predicted labels (diseases)
+    predicted_labels = df['predicted_label'].unique()
+
+    for label in predicted_labels:
+        # Get True Positives (TP), False Positives (FP), False Negatives (FN)
+        tp = len(df[(df['predicted_label'] == label) & (df['feedback_type'] == 'Correct_Predictions')])
+        fp = len(df[(df['predicted_label'] == label) & (df['feedback_type'] == 'Incorrect_Predictions')])
+        fn = len(df[(df['predicted_label'] != label) & (df['feedback_type'] == 'Incorrect_Predictions')])
+
+        # Compute precision, recall, and F1 score for each label
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+        overall_inference_count = len(df[df['predicted_label'] == label])
+        # print(overall_inference_count)
+        # print('Overall Inference: ',len(expanded_df))
+
+
+        correct_inference_count = len(df[(df['feedback_type'] == 'Correct_Predictions') & (df['predicted_label'] == label)])
+        incorrect_inference_count = len(df[(df['feedback_type'] == 'Incorrect_Predictions') & (df['predicted_label'] == label)])
+        avg_correct_inference_confidence = df[(df['feedback_type'] == 'Correct_Predictions') & (df['predicted_label'] == label)].confidence_score.mean()
+        # avg_incorrect_inference_count = df[(df['feedback_type'] == 'Incorrect_Predictions') & (df['predicted_label'] == label)].confidence_score.mean()
+
+        # print("Correct Inference Count:")
+        # print(correct_inference_count)
+
+        # print("\nIncorrect Inference Count:")
+        # print(incorrect_inference_count)
+
+        # Store the metrics
+        metrics[label] = {
+            'precision': precision,
+            'recall': recall,
+            'f1_score': f1,
+            'overall_inference_count': overall_inference_count,
+            'correct_inference_count': correct_inference_count,
+            'incorrect_inference_count': incorrect_inference_count,
+            'avg_correct_inference_confidence': avg_correct_inference_confidence,
+            # 'avg_incorrect_inference_count': avg_incorrect_inference_count
+        }
+
+    metrics['total'] = {
+        'precision': None,
+        'recall': None,
+        'f1_score': None,
+        'overall_inference_count': len(df),
+        'correct_inference_count': len(df[df['feedback_type'] == 'Correct_Predictions']),
+        'incorrect_inference_count': len(df[df['feedback_type'] == 'Incorrect_Predictions']),
+        'avg_correct_inference_confidence': None,
+        # 'avg_incorrect_inference_count': avg_incorrect_inference_count
+    }
+
+    return metrics
+
+# Calculate metrics
+metrics = calculate_metrics(expanded_df)
+
+# Convert metrics to DataFrame for easier visualization
+metrics_df = pd.DataFrame.from_dict(metrics, orient='index')
+
+# Display the metrics for each disease
+print(metrics_df)
+
+
+
+from datetime import datetime
+import pytz
+est_timezone = pytz.timezone('US/Eastern')
+timestamp = datetime.now(est_timezone).strftime("%Y-%m-%d_%H-%M-%S")
+# print(timestamp)
+metrics_df.to_csv(f'D:/MS/Sem3 - Fall 2024/MLOps/Multiclass_Disease_Classification/monitoring/metrics_{timestamp}.csv')
+
+bucket_name = 'nih-dataset-mlops'
+destination_blob_name = f'model_monitoring/metrics_{timestamp}.csv'
+
+
+csv_buffer = io.StringIO()
+metrics_df.to_csv(csv_buffer, index=False)
+# Rewind the buffer's cursor to the start
+csv_buffer.seek(0)
+
+# Create a blob (file object) and upload the in-memory CSV to GCS
+blob = bucket.blob(destination_blob_name)
+blob.upload_from_file(csv_buffer, content_type='text/csv')
+
+print(f"File uploaded to gs://{bucket_name}/{destination_blob_name}")
+
+
+
+
+
+
+# Create Dash app
+app = dash.Dash(__name__)
+
+# Layout with Tabs
+app.layout = html.Div([
+    html.H1("Model Performance Dashboards"),
+
+    # Tabs
+    dcc.Tabs([
+        # First Tab: Overall Inference and Correct/Incorrect Inferences
+        dcc.Tab(label='Overall Inference Metrics', children=[
+            html.H2("Overall Model Inference Metrics"),
+            dcc.Graph(
+                id='disease-inference-count',
+                figure=px.bar(overall_inference_count, title="Overall Inference Count", labels={'index': 'Disease', 'value': 'Inference Count'})
+            ),
+            dcc.Graph(
+                id='correct-incorrect-inferences',
+                figure=px.bar(
+                    pd.DataFrame({
+                        'correct': correct_inference_count,
+                        'incorrect': incorrect_inference_count
+                    }).reset_index().melt(id_vars='predicted_label'),
+                    x='predicted_label', y='value', color='variable', title="Correct vs Incorrect Inferences (Based on Feedback)"
+                )
+            ),
+            dcc.Graph(
+                id='confidence-scores',
+                figure=px.box(
+                    expanded_df[expanded_df['feedback_type'] == 'Correct_Predictions'], x='predicted_label', y='confidence_score',
+                    title="Confidence Scores for Correct Inferences"
+                )
+            )
+        ]),
+
+        # Second Tab: Disease-Specific Metrics
+        dcc.Tab(label='Disease Performance', children=[
+            html.H2("Select Disease to View Metrics"),
+            dcc.Dropdown(
+                id='disease-dropdown',
+                options=[{'label': disease, 'value': disease} for disease in metrics_df.index[:-1]],
+                value='Pleural_Thickening',  # Default value
+                style={'width': '50%'}
+            ),
+            html.Div(id='disease-dashboard')
+        ])
+    ])
+])
+
+# Callback to update the disease dashboard based on selected disease
+@app.callback(
+    Output('disease-dashboard', 'children'),
+    [Input('disease-dropdown', 'value')]
+)
+def update_dashboard(disease):
+    disease_data = metrics_df.loc[disease]
+
+    # Create the disease-specific dashboard
+    return html.Div([
+        html.H2(f"Metrics for {disease}"),
+        dash_table.DataTable(
+            columns=[
+                {"name": "Metric", "id": "metric"},
+                {"name": "Value", "id": "value"}
+            ],
+            data=[
+                {"metric": "Precision", "value": disease_data['precision']},
+                {"metric": "Recall", "value": disease_data['recall']},
+                {"metric": "F1 Score", "value": disease_data['f1_score']},
+                {"metric": "Overall Inference Count", "value": disease_data['overall_inference_count']},
+                {"metric": "Correct Inference Count", "value": disease_data['correct_inference_count']},
+                {"metric": "Incorrect Inference Count", "value": disease_data['incorrect_inference_count']}
+            ],
+            style_table={'height': '300px', 'overflowY': 'auto'}
+        ),
+        # Bar chart for Correct vs Incorrect Inferences
+        dcc.Graph(
+            id=f'correct-incorrect-{disease}',
+            figure={
+                'data': [
+                    go.Bar(
+                        x=['Correct', 'Incorrect'],
+                        y=[disease_data['correct_inference_count'], disease_data['incorrect_inference_count']],
+                        name=f'Inferences for {disease}',
+                        marker=dict(color=['green', 'red'])
+                    )
+                ],
+                'layout': go.Layout(
+                    title=f'Correct and Incorrect Inferences for {disease}',
+                    xaxis={'title': 'Inference Type'},
+                    yaxis={'title': 'Count'}
+                )
+            }
+        )
+    ])
+
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True)
+

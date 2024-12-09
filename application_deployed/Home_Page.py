@@ -146,7 +146,7 @@ st.markdown(
             Have questions or need assistance? We’d love to hear from you!
         </p>
         <p style="color: #BB86FC; text-align: center; font-size: 1.2em;">
-            Email us at: <a href="mailto:contact@thorai.com" style="color: #03DAC6; text-decoration: none;">contact@thorai.com</a>
+            Email us at: <a href="mailto:thoraix.mlops@gmail.com" style="color: #03DAC6; text-decoration: none;">contact@thorai.com</a>
         </p>
     </div>
     """,

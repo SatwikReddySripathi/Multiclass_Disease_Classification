@@ -1,0 +1,7 @@
+[theme]
+base="dark"
+font="sans serif"
+primaryColor = "#4CAF50"  # Green for healthcare branding
+backgroundColor="#121212"  # Dark background for the app
+secondaryBackgroundColor="#1E1E1E"  # Slightly lighter for panels
+textColor="#FFFFFF"  # White text for readability

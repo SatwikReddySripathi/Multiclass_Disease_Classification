@@ -12,6 +12,7 @@ from src.preprocessing import process_images_airflow
 from src.cloud_data_management import extracting_data_from_gcp, upload_data_to_gcp
 from src.schema_generation import validate_data_schema
 from src.anomaly_detection import anomalies_detect
+from src.splitting import splitting_airflow
 
 # Set the logging directory to a known directory inside the Airflow container
 LOG_DIR = '/opt/airflow/logs'
@@ -73,6 +74,11 @@ with DAG(DAG_NAME, default_args=default_args, schedule_interval=None, catchup=Fa
         }
     )
 
+    splitting_task = PythonOperator(
+        task_id='Splitting_test_train',
+        python_callable=splitting_airflow,        
+    )
+
     preprocess_task = PythonOperator(
         task_id='Preprocssing_images',
         python_callable=process_images_airflow,
@@ -88,6 +94,6 @@ with DAG(DAG_NAME, default_args=default_args, schedule_interval=None, catchup=Fa
     )
 
     # Set task dependencies
-    start >> extracting_data >> data_schema >> anomaly_detection >> preprocess_task >> upload_data >> end
+    start >> extracting_data >> data_schema >> anomaly_detection >> splitting_task >> preprocess_task >> upload_data >> end
 
 logging.info("DAG loaded successfully")

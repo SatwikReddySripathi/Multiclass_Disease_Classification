@@ -141,3 +141,7 @@ Processed_Data/raw_compressed_data.pkl
 config/labels_to_indices.json
 Processed_Data/preprocessed_data.pkl
 Processed_Data/schema.pbtxt
+Processed_Data/preprocessed_data_old.pkl
+/runs
+Processed_Data/raw_compressed_data_old2.pkl
+Processed_Data/raw_compressed_data_old3.pkl

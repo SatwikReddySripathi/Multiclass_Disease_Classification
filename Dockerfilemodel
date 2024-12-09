@@ -1,23 +1,36 @@
-# Use a base Python image
-FROM python:3.8
+# Base Python image
+FROM python:3.9-slim
 
-# Install dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Install required system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    libffi-dev \
+    libssl-dev \
+    libpython3-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy over the model requirements and install
-COPY model_requirements.txt .
-RUN pip install --no-cache-dir -r /model_requirements.txt
-
-
-# Set the working directory
+# Set working directory
 WORKDIR /app
-RUN mkdir -p /app
 
-# Copy your model training script and other necessary files
-COPY model/ model/
+# Copy the requirements file
+COPY model_requirements.txt /requirements.txt
 
-# Create a directory to save the model
-RUN mkdir -p /app/model_output
+# Upgrade pip and install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r /requirements.txt
 
-# Entry point for running the training script
-CMD ["python", "model/final_model.py"]
+# Copy the streamlit application folder
+COPY application_deployed /app/application_deployed
+
+# Expose Streamlit port
+EXPOSE 8080
+
+# Set PORT environment variable
+ENV PORT=8080
+
+# Run the main_page.py file from the streamlit_application folder
+CMD ["streamlit", "run", "application_deployed/Home_Page.py", "--server.port=8080", "--server.address=0.0.0.0"]

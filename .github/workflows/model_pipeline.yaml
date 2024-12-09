@@ -1,110 +1,114 @@
-name: Model Training and Storage Pipeline
-on:
-  push:
-    branches:
-      - dheeraj_model
-  pull_request:
-    branches:
-      - dheeraj_model
-  workflow_dispatch:
-env:
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-  IMAGE_NAME: "ml-model-image"
-  REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models-new"
-  GCS_BUCKET: "nih-dataset-mlops"
-jobs:
-  model_pipeline:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-      
-      - name: Clean up Docker
-        run: docker system prune -af --volumes
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v1'
-        with:
-          credentials_json: "${{ secrets.GCP_SA_KEY }}"
-      
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
-      
-      - name: Configure Docker for GCP Artifact Registry
-        run: |
-          gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
-      
-      - name: Create Temporary GCP Key File
-        run: |
-          mkdir -p app
-          cp -r model app/
-          echo '${{ secrets.GCP_SA_KEY }}' | jq '.' > app/gcp-key.json
-      
-      - name: Build and Push Docker Image
-        run: |
-          echo "Building Docker image..."
-          docker build -f Dockerfilemodel -t $REGISTRY/$IMAGE_NAME:latest .
-          echo "Pushing image to Artifact Registry..."
-          docker push $REGISTRY/$IMAGE_NAME:latest
-      
-      - name: Run Model Training Script
-        run: |
-          echo "Starting model training..."
-          mkdir -p model_output
-          docker run --rm \
-          -v $(pwd)/model_output:/app/model_output \
-          -v $(pwd)/app:/app \
-          -e GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json \
-          $REGISTRY/$IMAGE_NAME:latest \
-          python model/final_model.py
-          echo "Model training completed."
+# name: Deploy model to Vertex AI
+# on:
+#   push:
+#     branches:
+#       - dhanush_model
+#   pull_request:
+#     branches:
+#       - dhanush_model
+#   workflow_dispatch:
+# env:
+#   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+#   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+#   IMAGE_NAME: "ml-model-image"
+#   REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models-new"
+#   GCS_BUCKET: "nih-dataset-mlops"
 
+# jobs:
+#   deploy-to-vertex-ai:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     # Step 1: Check out the repository
+#     - name: Checkout Code
+#       uses: actions/checkout@v3
+
+
+#     #Google Cloud Authentication
+#     - id: 'auth'
+#       name: 'Authenticate to Google Cloud'
+#       uses: 'google-github-actions/auth@v1'
+#       with:
+#           credentials_json: "${{ secrets.GCP_SA_KEY }}"
       
-      - name: Verify Model Output
-        run: |
-          echo "Checking contents of model_output directory:"
-          ls -l model_output
-          if [ ! -f model_output/best_model.pt ]; then
-            echo "❌ Model file best_model.pt not found"
-            exit 1
-          fi
+#     - name: 'Set up Cloud SDK'
+#       uses: 'google-github-actions/setup-gcloud@v1'      
+
+#     # Step 4: Create a model in Vertex AI Model Registry
+#     - name: Create or check for Existing Model Registry in Vertex AI
+#       id: create-model
+#       run: |
+#         MODEL_NAME="gitmodel"
+#         REGION="us-east1"
+#         MODEL_URI="gs://nih-dataset-mlops/Testing"
+#         echo "Checking if model exists in Vertex AI Model Registry..."
+#         MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
+
+#         if [ -z "$MODEL_ID" ]; then
+#           echo "Model does not exist. Creating a new model..."
+#           gcloud ai models upload \
+#             --region=$REGION \
+#             --display-name=$MODEL_NAME \
+#             --artifact-uri=$MODEL_URI \
+#             --container-image-uri=us-docker.pkg.dev/vertex-ai/prediction/pytorch-cpu.2-1:latest
+#           MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
+#         else
+#           echo "Model already exists: $MODEL_ID"
+#         fi
+#         echo "MODEL_ID=$MODEL_ID"
+#         echo "MODEL_ID=$MODEL_ID" >> $GITHUB_ENV
+          
+#       # Step 7: Create or Reuse an Endpoint
+#     - name: Create or Reuse Endpoint
+#       id: create_endpoint
+#       run: |
+#           echo "Checking for existing endpoint..."
+#           REGION="us-east1"
+#           ENDPOINT_NAME=$(gcloud ai endpoints list --region=$REGION --filter="display_name='gitmodelendpoint'" --format="value(name)")
+
+#           if [ -z "$ENDPOINT_NAME" ]; then
+#             echo "No existing endpoint found. Creating a new one..."
+#             ENDPOINT_NAME=$(gcloud ai endpoints create --region=$REGION --display-name=gitmodelendpoint --format="value(name)")
+#           fi
+
+#           if [ -z "$ENDPOINT_NAME" ]; then
+#             echo "ERROR: Failed to create or retrieve endpoint. Exiting workflow."
+#             exit 1
+#           fi
+
+#           echo "ENDPOINT_NAME=$ENDPOINT_NAME" 
+#           echo "Retrieved or created ENDPOINT_NAME: $ENDPOINT_NAME"
+#           echo "ENDPOINT_NAME=$ENDPOINT_NAME" >> $GITHUB_ENV
+
+
+#       # Step 8: Deploy Model to Endpoint 
+#     - name: Deploy Model to Endpoint
+#       run: |
+#           echo "Deploying model $MODEL_ID to endpoint $ENDPOINT_NAME..."
+#           gcloud ai endpoints deploy-model $ENDPOINT_NAME --region=us-east1 --model=$MODEL_ID --display-name=gitmodelendpoint-deployment --machine-type=n1-standard-2 --traffic-split=0=100   
+
+
+#     # Step 9: Get Endpoint URI
+#     - name: Get Endpoint URI
+#       run: |
+#         GCP_PROJECT_ID='812555529114'
+#         REGION="us-east1"
+#         ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
+#         echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/$ENDPOINT_NAME:predict"
       
-      - name: Upload Model to GCS
-        run: |
-          echo "Uploading model to GCS..."
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          gsutil cp model_output/best_model.pt gs://$GCS_BUCKET/models/best_model-$TIMESTAMP.pt
-          gsutil cp model_output/best_model.pt gs://$GCS_BUCKET/models/best_model-latest.pt
-          echo "Model uploaded successfully."
-      
-      - name: Notify on Success
-        if: success()
-        run: |
-          echo "✅ Pipeline completed successfully:"
-          echo "- Model trained"
-          echo "- Model uploaded to GCS bucket: $GCS_BUCKET"
-          echo "- Docker image pushed to: $REGISTRY/$IMAGE_NAME:latest"
-      
-      - name: Notify on Failure
-        if: failure()
-        run: |
-          echo "❌ Pipeline failed:"
-          echo "- Check the logs above for detailed error messages"
-          echo "- Verify GCP permissions and credentials"
-          echo "- Ensure all required services are enabled"
-      
-      - name: Cleanup
-        if: always()
-        run: |
-          echo "Performing cleanup..."
-          rm -f app/gcp-key.json
-          docker system prune -af --volumes
-          echo "Cleanup completed."
+#     # Step 10: Streamlit Application Deployment.
+#     - name: Set up Python
+#       uses: actions/setup-python@v4
+#       with:
+#         python-version: '3.8'
+    
+#     - name: Install dependencies
+#       run: |
+#         python -m pip install --upgrade pip
+#         pip install streamlit torch torchvision pillow requests
+
+#     - name: Deploy/Run Streamlit App
+#       run: |
+#         streamlit run streamlit_application/deploy_streamlit.py
+#       env:
+#         PORT: 8501

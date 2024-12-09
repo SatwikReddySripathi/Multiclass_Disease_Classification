@@ -1,7 +1,10 @@
+import os
 import io
 import ast
 import torch
 import pickle
+import logging
+import itertools
 import numpy as np
 from PIL import Image
 
@@ -14,6 +17,33 @@ from torch.utils.data import random_split, DataLoader, TensorDataset
 
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.classification import MultilabelPrecision, MultilabelRecall, MultilabelF1Score
+
+#log_directory = '/content/drive/My Drive/MLOPs Project'
+#log_filename = 'logs_model.log'
+log_file_path = 'logs_model.log'
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)  # Setting to DEBUG to capture all log messages or else it might not log info and error messages(got this error already)
+
+file_handler = logging.FileHandler(log_file_path)
+file_handler.setLevel(logging.DEBUG)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+logger.info("Logging configuration is set. Logs will be saved to: {}".format(log_file_path))
+
+writer = SummaryWriter("runs/CustomResNet18_experiment")
+
+"""# functions"""
+
 def load_data(original_data_pickle, batch_size, train_percent, val_percent, target_size=(224, 224)):
     images = []
     demographics = []
@@ -72,8 +102,9 @@ def load_data(original_data_pickle, batch_size, train_percent, val_percent, targ
     print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}, Test samples: {len(test_dataset)}")
 
     return train_loader, val_loader, test_loader
+
 class CustomResNet18(nn.Module):
-    def __init__(self, num_demographics, num_classes=15):
+    def __init__(self, demographic_fc_size, num_demographics, num_classes=15):
         super(CustomResNet18, self).__init__()
 
         self.resnet = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
@@ -87,12 +118,12 @@ class CustomResNet18(nn.Module):
 
         # this fc processes the demographics (age + gender)
         self.demographics_fc = nn.Sequential(
-            nn.Linear(num_demographics, 32),
+            nn.Linear(num_demographics, demographic_fc_size),
             nn.ReLU(),
             nn.Dropout(0.5)
         )
 
-        self.fc = nn.Linear(512 + 32, num_classes)  # 512 from ResNet, 32 from demographics_fc, can make it 64?
+        self.fc = nn.Linear(512 + demographic_fc_size, num_classes)  # 512 from ResNet(it's how resnet is), 32 from demographics_fc, can make it 64?
 
     def forward(self, images, demographics):
         x = self.resnet(images)  # Passing images through the modified ResNet (without its last layer)
@@ -107,7 +138,6 @@ class CustomResNet18(nn.Module):
         #print("Output shape before returning:", x.shape)
 
         return x
-writer = SummaryWriter("runs/CustomResNet18_experiment")
 
 def freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"]):
     for name, param in model.named_parameters():
@@ -120,6 +150,8 @@ def freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"])
 def train_model(train_loader, val_loader, model, criterion, optimizer, num_epochs= 10):
 
   model.train()
+
+  best_val_accuracy = 0
   for epoch in range(num_epochs):
     running_loss = 0.0
     for inputs, demographics, labels in train_loader:
@@ -165,8 +197,12 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, num_epoch
     writer.add_scalar("Loss/Validation", avg_val_loss, epoch)
     writer.add_scalar("Accuracy/Validation", val_accuracy, epoch)
 
-    accuracy = 100 * correct / total
+    if val_accuracy > best_val_accuracy:
+      best_val_accuracy = val_accuracy
+
     print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {avg_train_loss}, Validation Loss: {avg_val_loss}, Validation Accuracy: {val_accuracy}%")
+  return best_val_accuracy
+
 def evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric, confidence= 0.3):
     model.eval()
     correct = 0
@@ -212,12 +248,62 @@ def evaluate_model(test_loader, model, criterion, precision_metric, recall_metri
     print(f'Test Loss: {avg_test_loss:.4f}')
     print(f'Test Accuracy: {test_accuracy:.2f}%')
     print(f'Test Precision: {precision:.4f}, Recall: {recall:.4f}, F1-score: {f1_score:.4f}')
+
+    return test_accuracy, precision, recall, f1_score
+
+def grid_search():
+    param_grid = {
+        "num_epochs": [5],
+        "batch_size": [32, 64],
+        "learning_rate": [1e-5, 1e-4],
+        "demographics_fc_size": [64]
+    }
+
+    best_val_accuracy = 0
+    best_params = None
+
+    all_combinations = list(itertools.product(*param_grid.values()))
+
+    for params in all_combinations:
+        num_epochs, batch_size, learning_rate, demographics_fc_size = params
+
+        logging.info(f"Starting training with params: epochs={num_epochs}, batch_size={batch_size}, "
+                     f"learning_rate={learning_rate}, demographics_fc_size={demographics_fc_size}")
+
+        print(f"Training with params: {params}")
+
+        train_loader, val_loader, test_loader = load_data(
+            config["file_path"], batch_size, config["train_percent"], config["val_percent"]
+        )
+
+        model = CustomResNet18(demographics_fc_size, num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
+        freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"])
+
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+        criterion = nn.BCEWithLogitsLoss()
+
+        val_accuracy = train_model(train_loader, val_loader, model, criterion, optimizer, num_epochs)
+
+        logging.info(f"Validation Accuracy: {val_accuracy:.4f} for params: epochs={num_epochs}, "
+                     f"batch_size={batch_size}, learning_rate={learning_rate}, demographics_fc_size={demographics_fc_size}")
+
+        if val_accuracy > best_val_accuracy:
+            best_val_accuracy = val_accuracy
+            best_params = params
+
+    print(f"Best validation accuracy: {best_val_accuracy} with parameters: {best_params}")
+    logging.info(f"Best validation accuracy: {best_val_accuracy:.4f} with parameters: {best_params}")
+
+    with open("best_params.txt", "w") as f:
+      f.write(f"Best validation accuracy: {best_val_accuracy}\n")
+      f.write(f"Parameters: {best_params}\n")
+
+    return best_params
+
 if __name__ == "__main__":
+  PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
   config = {
-      "file_path": "preprocessed_dummy_data.pkl",
-      "batch_size": 32,
-      "num_epochs": 10,
-      "learning_rate": 1e-5,
+      "file_path": os.path.join(PROJECT_DIR, "model", "preprocessed_dummy_data.pkl"),
       "num_demographics": 3,
       "num_classes": 15,
       "train_percent": 0.7,
@@ -225,13 +311,17 @@ if __name__ == "__main__":
   }
 
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  train_loader, val_loader, test_loader = load_data(config["file_path"], config["batch_size"], config["train_percent"], config["val_percent"])
+  logging.info("Starting grid search...")
+  best_params= grid_search()
 
-  model = CustomResNet18(num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
+  logging.info("Training final model with best parameters...")
+  train_loader, val_loader, test_loader = load_data(config["file_path"], best_params[1], config["train_percent"], config["val_percent"])
+
+  model = CustomResNet18(best_params[3], num_demographics=config["num_demographics"], num_classes=config["num_classes"]).to(device)
   freeze_unfreeze_layers(model, freeze=True, layers_to_train=["layer4", "fc"])
 
   criterion = nn.BCEWithLogitsLoss()
-  optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config["learning_rate"])
+  optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=best_params[2])
 
   """precision_metric = torchmetrics.Precision(average='micro').to(device)
   recall_metric = torchmetrics.Recall(average='micro').to(device)
@@ -241,7 +331,12 @@ if __name__ == "__main__":
   recall_metric = MultilabelRecall(num_labels= config["num_classes"], average='macro').to(device)
   f1_metric = MultilabelF1Score(num_labels= config["num_classes"], average='macro').to(device)
 
-  train_model(train_loader, val_loader, model, criterion, optimizer, config["num_epochs"])
-  evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric)
+  best_val_accuracy= train_model(train_loader, val_loader, model, criterion, optimizer, best_params[0])
+  logging.info(f"Best validation accuracy after retraining the with best params: {best_val_accuracy:.4f}")
+  torch.save(model.state_dict(), "final_model.pth")
+
+  logging.info("Final model saved as final_model.pth")
+
+  test_accuracy, precision, recall, f1_score= evaluate_model(test_loader, model, criterion, precision_metric, recall_metric, f1_metric)
 
   writer.close()

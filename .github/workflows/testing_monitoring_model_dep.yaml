@@ -1,0 +1,129 @@
+# name: Testing Monitoring Model Deployment
+# on:
+#   push:
+#     branches:
+#       - dheeraj_model
+#   pull_request:
+#     branches:
+#       - dheeraj_model
+#   workflow_dispatch:
+# env:
+#   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+#   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+#   IMAGE_NAME: "ml-model-image"
+#   REGISTRY: "us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/ml-models-new"
+#   GCS_BUCKET: "nih-dataset-mlops"
+# jobs:
+#   model_pipeline:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: read
+#       id-token: write
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v2
+
+#       - name: Clean up Docker
+#         run: docker system prune -af --volumes
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v2
+
+#       - id: "auth"
+#         name: "Authenticate to Google Cloud"
+#         uses: "google-github-actions/auth@v1"
+#         with:
+#           credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+#       - name: "Set up Cloud SDK"
+#         uses: "google-github-actions/setup-gcloud@v1"
+
+#       - name: Create or check for Existing Model Registry in Vertex AI
+#         id: create-model
+#         run: |
+#           MODEL_NAME="gitmodel"
+#           REGION="us-east1"
+#           MODEL_URI="gs://nih-dataset-mlops/models"
+#           echo "Checking if model exists in Vertex AI Model Registry..."
+#           MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
+
+#           if [ -z "$MODEL_ID" ]; then
+#             echo "Model does not exist. Creating a new model..."
+#             gcloud ai models upload \
+#               --region=$REGION \
+#               --display-name=$MODEL_NAME \
+#               --artifact-uri=$MODEL_URI \
+#               --container-image-uri=us-docker.pkg.dev/vertex-ai/prediction/pytorch-cpu.2-1:latest
+#             MODEL_ID=$(gcloud ai models list --region=$REGION --filter="display_name='gitmodel'" --format="value(name)")
+#           else
+#             echo "Model already exists: $MODEL_ID"
+#           fi
+#           echo "MODEL_ID=$MODEL_ID"
+#           echo "MODEL_ID=$MODEL_ID" >> $GITHUB_ENV
+
+#       - name: Create or Reuse Endpoint
+#         id: create_endpoint
+#         run: |
+#           echo "Checking for existing endpoint..."
+#           REGION="us-east1"
+#           ENDPOINT_NAME=$(gcloud ai endpoints list --region=$REGION --filter="display_name='gitmodelendpoint'" --format="value(name)")
+
+#           if [ -z "$ENDPOINT_NAME" ]; then
+#             echo "No existing endpoint found. Creating a new one..."
+#             ENDPOINT_NAME=$(gcloud ai endpoints create --region=$REGION --display-name=gitmodelendpoint --format="value(name)")
+#           fi
+
+#           if [ -z "$ENDPOINT_NAME" ]; then
+#             echo "ERROR: Failed to create or retrieve endpoint. Exiting workflow."
+#             exit 1
+#           fi
+
+#           echo "ENDPOINT_NAME=$ENDPOINT_NAME"
+#           echo "Retrieved or created ENDPOINT_NAME: $ENDPOINT_NAME"
+#           echo "ENDPOINT_NAME=$ENDPOINT_NAME" >> $GITHUB_ENV
+
+#       - name: Deploy Model to Endpoint
+#         run: |
+#           echo "Deploying model $MODEL_ID to endpoint $ENDPOINT_NAME..."
+#           gcloud ai endpoints deploy-model $ENDPOINT_NAME \
+#           --region=us-east1 \
+#           --model=$MODEL_ID \
+#           --display-name=gitmodelendpoint-deployment \
+#           --machine-type=n1-standard-2 \
+#           --traffic-split=0=100 \
+#           --enable-access-logging
+#       #         gcloud ai endpoints update $ENDPOINT_NAME --region=us-east1 update-mask=deployed_models[0].model_logging deployed-models[0].model-logging.enabled=true
+#       - name: Get Endpoint URI
+#         run: |
+#           GCP_PROJECT_ID='812555529114'
+#           REGION="us-east1"
+#           ENDPOINT=$(gcloud ai endpoints list --region us-east1 --filter="displayName='gitmodelendpoint'" --format="value(name)")
+#           echo "Endpoint URI: https://us-east1-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/endpoints/$ENDPOINT_NAME:predict"
+
+#       # Step 2: Create Log-Based Metrics for Drift
+#       - name: Set Up Log-Based Metrics
+#         run: |
+#           echo "Creating log-based metrics for monitoring..."
+#           gcloud logging metrics create data_feature_drift \
+#             --description="Tracks data drift based on feature distribution" \
+#             --log-filter='resource.type="ml.googleapis.com/Endpoint" AND severity="INFO"'
+
+#       # Step 3: Set Up Alert Policy
+#       - name: Configure Alert Policy
+#         run: |
+#           echo "Setting up alert policy for data drift..."
+#           ALERT_POLICY=$(gcloud monitoring policies create \
+#             --display-name="Data Drift Alert" \
+#             --conditions='metric.type="logging.googleapis.com/user/data_feature_drift"' \
+#             --notification-channels="${{ secrets.NOTIFICATION_CHANNEL }}" \
+#             --format="value(name)")
+
+#           echo "Alert policy created: $ALERT_POLICY"
+
+#       - name: Cleanup
+#         if: always()
+#         run: |
+#           echo "Performing cleanup..."
+#           rm -f app/gcp-key.json
+#           docker system prune -af --volumes
+#           echo "Cleanup completed."

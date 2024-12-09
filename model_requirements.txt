@@ -10,3 +10,9 @@ tensorflow-data-validation
 torchmetrics
 Pillow
 torchvision
+mlflow
+torchserve
+torch-model-archiver
+streamlit
+opencv-python-headless
+tqdm

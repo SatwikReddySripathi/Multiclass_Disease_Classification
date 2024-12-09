@@ -71,7 +71,7 @@ The project utilizes the NIH ChestX-ray14 dataset, one of the largest publicly a
 
 ## Project Workflow
 
-![Basic Project Workflow](assets/HighLevel_arch.png)
+![Basic Project Workflow](assets/final_flowchart.drawio.png)
 This is the basic Project Flow and this will be updated after the final system architecture is designed
 
 ## Git Repo and Project Structure

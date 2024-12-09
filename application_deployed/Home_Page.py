@@ -1,5 +1,5 @@
 import streamlit as st
-st.image("assets/logo.png", caption="")
+#st.image("assets/logo.png", caption="")
 st.markdown(
     """
     <style>
